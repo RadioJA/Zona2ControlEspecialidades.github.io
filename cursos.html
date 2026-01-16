@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .course-card {
+            transition: transform .2s;
+        }
+        .course-card:hover {
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div id="courses-list-view">
+            <h1 class="mb-4">Cursos Disponibles</h1>
+            <div id="courses-container" class="row">
+                <!-- Los cursos se cargarán aquí dinámicamente -->
+            </div>
+        </div>
+
+        <div id="course-detail-view" class="d-none">
+            <button id="back-to-list" class="btn btn-secondary mb-4"><i class="bi bi-arrow-left"></i> Volver a la lista</button>
+            <div id="course-content">
+                <!-- El contenido del curso se cargará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const coursesContainer = document.getElementById('courses-container');
+            const coursesListView = document.getElementById('courses-list-view');
+            const courseDetailView = document.getElementById('course-detail-view');
+            const courseContent = document.getElementById('course-content');
+            const backToListBtn = document.getElementById('back-to-list');
+
+            const courses = JSON.parse(localStorage.getItem('courses')) || [];
+
+            function displayCourses() {
+                coursesContainer.innerHTML = '';
+                if (courses.length === 0) {
+                    coursesContainer.innerHTML = '<p class="text-muted">No hay cursos disponibles en este momento.</p>';
+                    return;
+                }
+
+                courses.forEach(course => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4';
+                    col.innerHTML = `
+                        <div class="card h-100 course-card">
+                            <img src="${course.image || 'https://via.placeholder.com/300x200'}" class="card-img-top" alt="Imagen del curso">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${course.title}</h5>
+                                <p class="card-text flex-grow-1">${course.description}</p>
+                                <button class="btn btn-primary mt-auto" onclick="viewCourse(${course.id})">Ver Curso</button>
+                            </div>
+                        </div>
+                    `;
+                    coursesContainer.appendChild(col);
+                });
+            }
+
+            window.viewCourse = function(courseId) {
+                const course = courses.find(c => c.id === courseId);
+                if (!course) return;
+
+                courseContent.innerHTML = `
+                    <h2 class="mb-3">${course.title}</h2>
+                    <p>${course.description}</p>
+                    ${course.video ? `
+                        <div class="ratio ratio-16x9 mb-4">
+                            <iframe src="${embedYouTube(course.video)}" title="Video del curso" allowfullscreen></iframe>
+                        </div>
+                    ` : ''}
+                    ${course.document ? `
+                        <div class="mt-4">
+                            <h5>Documento Adjunto</h5>
+                            <a href="${course.document}" download="${course.documentName || 'documento'}" class="btn btn-success">
+                                <i class="bi bi-download me-2"></i>Descargar Documento
+                            </a>
+                        </div>
+                    ` : ''}
+                `;
+                
+                coursesListView.classList.add('d-none');
+                courseDetailView.classList.remove('d-none');
+            }
+
+            backToListBtn.addEventListener('click', () => {
+                courseDetailView.classList.add('d-none');
+                coursesListView.classList.remove('d-none');
+            });
+
+            function embedYouTube(url) {
+                const videoId = url.split('v=')[1];
+                if (videoId) {
+                    const ampersandPosition = videoId.indexOf('&');
+                    if (ampersandPosition !== -1) {
+                        return 'https://www.youtube.com/embed/' + videoId.substring(0, ampersandPosition);
+                    }
+                    return 'https://www.youtube.com/embed/' + videoId;
+                }
+                return url; // Return original URL if it's not a standard YouTube link
+            }
+
+            displayCourses();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Aprobaciones</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-image: url('Fondo/zona2.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .certificate-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-family: 'Times New Roman', Times, serif;
+            text-align: center;
+        }
+        .user-name {
+            position: absolute;
+            font-size: 36px;
+            font-weight: bold;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .course-name {
+            position: absolute;
+            font-size: 24px;
+            top: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .date {
+            position: absolute;
+            font-size: 18px;
+            top: 250px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Historial de Aprobaciones</h1>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre de Usuario</th>
+                        <th>Nombre del Curso</th>
+                        <th>Fecha de Aprobación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="historialTableBody">
+                    <!-- Filas se insertarán aquí -->
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-4">
+            <a href="admin_panel.html" class="btn btn-secondary">Volver al Panel</a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // New helper function to get logged-in user's nombre from localStorage
+        function getUserNombre() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return null;
+                const user = JSON.parse(userStr);
+                return user.name || null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // Check if current user is admin
+        function isAdmin() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return false;
+                const user = JSON.parse(userStr);
+                return user.role === 'admin';
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function createCertificateElement(result) {
+            const certificateContainer = document.createElement('div');
+            certificateContainer.className = 'certificate-container m-3';
+            certificateContainer.style.backgroundImage = 'url("Certificados/Diploma.png")';
+            certificateContainer.style.backgroundSize = '100% 100%';
+            certificateContainer.style.backgroundRepeat = 'no-repeat';
+            certificateContainer.style.backgroundPosition = 'center';
+
+            const userNameDiv = document.createElement('div');
+            userNameDiv.className = 'user-name';
+            userNameDiv.textContent = result.userName || "Nombre de Usuario de Ejemplo";
+
+            const courseNameDiv = document.createElement('div');
+            courseNameDiv.className = 'course-name';
+            courseNameDiv.textContent = result.title || "Nombre del Curso de Ejemplo";
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'date';
+            dateDiv.textContent = new Date(result.date || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            certificateContainer.append(userNameDiv, courseNameDiv, dateDiv);
+
+            return certificateContainer;
+        }
+
+        function loadHistorial() {
+            const tbody = document.getElementById('historialTableBody');
+            tbody.innerHTML = '';
+
+            const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+
+            // Get the logged-in user's name
+            const loggedInUserName = getUserNombre();
+            const isUserAdmin = isAdmin();
+
+            // Filter results to show approved exams (score > 70)
+            let approvedResults;
+            if (isUserAdmin) {
+                // Admin sees all approved exams
+                approvedResults = examResults.filter(result => result.score > 70);
+            } else {
+                // Non-admin sees only their own approved exams
+                approvedResults = examResults.filter(result => result.score > 70 && result.userName === loggedInUserName);
+            }
+
+            if (approvedResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay aprobaciones registradas.</td></tr>';
+                return;
+            }
+
+            approvedResults.forEach((result, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${result.userName}</td>
+                    <td>${result.title}</td>
+                    <td>${new Date(result.date).toLocaleDateString('es-ES')}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="viewCertificate(${index})">
+                            <i class="bi bi-eye"></i> Ver Certificado
+                        </button>
+                        ${isUserAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteHistorial(${index})">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+/**
+ * Fetches an image from a URL and converts it to a Data URL.
+ * This is necessary to bypass browser security restrictions on local files
+ * when rendering them in a canvas.
+ * @param {string} url The URL of the image to fetch.
+ * @returns {Promise<string>} A promise that resolves with the Data URL.
+ */
+function imageUrlToDataURL(url) {
+    return new Promise((resolve, reject) => {
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            })
+            .catch(error => {
+                console.error(`Could not convert image ${url} to Data URL:`, error);
+                reject(error);
+            });
+    });
+}
+
+async function downloadCertificate(resultIndex) {
+    // Ensure libraries are loaded
+    if (!window.jspdf || !window.html2canvas) {
+        alert('Error: Las librerías para generar el PDF no se cargaron correctamente. Revisa tu conexión a internet e inténtalo de nuevo.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+    const result = examResults[resultIndex];
+
+    if (!result) {
+        alert('No se encontraron los datos del resultado del examen.');
+        return;
+    }
+
+    // --- Pre-load all images as Data URLs ---
+    const globalConfig = JSON.parse(localStorage.getItem('certificateConfig') || '{}');
+    const selectedTemplate = globalConfig.certificateTemplate || 'Diploma.png';
+    let diplomaDataUrl;
+    try {
+        diplomaDataUrl = await imageUrlToDataURL(`Certificados/${selectedTemplate}`);
+    } catch (error) {
+        alert(`Error fatal: No se pudo cargar la plantilla del certificado "Certificados/${selectedTemplate}". Verifique que el archivo exista y la ruta sea correcta.`);
+        return;
+    }
+
+    // 1. Create the certificate HTML element in memory
+    const certificateElement = document.createElement('div');
+    certificateElement.style.position = 'absolute';
+    certificateElement.style.left = '-9999px'; // Position off-screen
+    certificateElement.style.width = '800px';
+    certificateElement.style.height = '600px';
+    certificateElement.style.fontFamily = "'Times New Roman', Times, serif";
+    certificateElement.style.textAlign = 'center';
+    certificateElement.style.color = '#333';
+    certificateElement.style.background = `url(${diplomaDataUrl}) no-repeat center center`;
+    certificateElement.style.backgroundSize = '100% 100%';
+
+    // Get text and positions from localStorage (or use defaults)
+    const userName = result.userName || "Nombre de Usuario";
+    const courseName = result.title || "Nombre del Curso";
+    const date = new Date(result.date || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const userFontSize = localStorage.getItem('userNameFontSize') || 36;
+    const userTop = localStorage.getItem('userNameTop') || 130;
+    const userLeft = localStorage.getItem('userNameLeft') || 400;
+
+    const courseFontSize = localStorage.getItem('courseNameFontSize') || 24;
+    const courseTop = localStorage.getItem('courseNameTop') || 180;
+    const courseLeft = localStorage.getItem('courseNameLeft') || 400;
+
+    const dateFontSize = localStorage.getItem('dateFontSize') || 18;
+    const dateTop = localStorage.getItem('dateTop') || 250;
+    const dateLeft = localStorage.getItem('dateLeft') || 400;
+
+    // Add User Name, Course Name, and Date
+    const textElements = [
+        { text: userName, top: userTop, left: userLeft, size: userFontSize, weight: 'bold' },
+        { text: courseName, top: courseTop, left: courseLeft, size: courseFontSize },
+        { text: `Completado el ${date}`, top: dateTop, left: dateLeft, size: dateFontSize }
+    ];
+
+    textElements.forEach(item => {
+        const div = document.createElement('div');
+        div.style.position = 'absolute';
+        div.style.fontSize = `${item.size}px`;
+        if (item.weight) div.style.fontWeight = item.weight;
+        div.style.top = `${item.top}px`;
+        div.style.left = `${item.left}px`;
+        div.style.transform = 'translateX(-50%)';
+        div.textContent = item.text;
+        certificateElement.appendChild(div);
+    });
+
+    // Temporarily add to the body to be rendered
+    document.body.appendChild(certificateElement);
+
+    try {
+        // 2. Use html2canvas to capture the element
+        const canvas = await html2canvas(certificateElement, {
+            width: 800,
+            height: 600,
+            scale: 2,
+            useCORS: true, // Though not strictly needed with data URLs, it's good practice
+            logging: false // Disable verbose logging
+        });
+
+        // 3. Create PDF and add the captured image
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: [800, 600]
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 0, 0, 800, 600);
+        
+        // 4. Save the PDF using the Blob method for better browser compatibility
+        const pdfBlob = doc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificado-${userName.replace(/ /g, '_')}-${courseName.replace(/ /g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('Error generating certificate PDF:', error);
+        alert('Ocurrió un error al generar el certificado. Verifique la consola para más detalles.');
+    } finally {
+        // 5. Clean up the temporary element
+        document.body.removeChild(certificateElement);
+    }
+}
+
+
+        function viewCertificate(resultIndex) {
+            window.open(`certificados.html?resultIndex=${resultIndex}`, '_blank');
+        }
+
+        function deleteHistorial(resultIndex) {
+            if (confirm('¿Estás seguro de que quieres eliminar este registro del historial? Esta acción no se puede deshacer.')) {
+                const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+                examResults.splice(resultIndex, 1);
+                localStorage.setItem('examResults', JSON.stringify(examResults));
+                loadHistorial(); // Reload the table
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHistorial);
+    </script>
+</body>
+</html>

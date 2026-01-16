@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar .nav-link {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .dropdown-menu {
+            background-color: #343a40;
+        }
+        .dropdown-item {
+            color: white;
+        }
+        body {
+            background-image: url('Fondo/zona2.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+        }
+    </style>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="d-flex">
+        <div class="sidebar text-white p-3" style="width: 220px; min-height: 100vh;">
+            <h4 class="mb-4"><i class="bi bi-gear-fill me-2"></i>Panel</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white active" aria-current="page" href="#" onclick="showSection('inicio')"><i class="bi bi-house-door-fill me-2"></i>Inicio</a>
+                </li>
+                <li class="nav-item" id="menu-especialidades">
+                    <a class="nav-link text-white" href="especialidades.html"><i class="bi bi-star-fill me-2"></i>Especialidades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="examen.html" onclick="showSection('examen')"><i class="bi bi-file-earmark-text-fill me-2"></i>Examen</a>
+                </li>
+                <li class="nav-item" id="menu-certificados">
+                    <a class="nav-link text-white" href="certificados.html"><i class="bi bi-patch-check-fill me-2"></i>Certificados</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="historial.html"><i class="bi bi-patch-check-fill me-2"></i>Historial</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="index.html" onclick="showSection('salir')"><i class="bi bi-box-arrow-right me-2"></i>Salir</a>
+                </li>
+            </ul>
+        </div>
+        <div class="flex-grow-1 p-4">
+            
+            <div id="especialidades" class="section d-none">
+                <h2>Especialidades</h2>
+                <button class="btn btn-primary mb-3" onclick="showCreateExamForm()">Crear Examen</button>
+                <div id="examForm" class="d-none">
+                    <h3>Crear Examen de Selección Múltiple</h3>
+                    <form id="createExamForm">
+                        <div class="mb-3">
+                            <label for="examTitle" class="form-label">Título del Examen</label>
+                            <input type="text" class="form-control" id="examTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="examLogo" class="form-label">Logo del Examen</label>
+                            <input type="file" class="form-control" id="examLogo" accept="image/*">
+                        </div>
+                        <div id="questionsContainer">
+                            <div class="question mb-3">
+                                <label class="form-label">Pregunta 1</label>
+                                <input type="text" class="form-control mb-2" placeholder="Escribe la pregunta" required>
+                                <div class="options">
+                                    <input type="text" class="form-control mb-1" placeholder="Opción 1" required>
+                                    <input type="text" class="form-control mb-1" placeholder="Opción 2" required>
+                                    <input type="text" class="form-control mb-1" placeholder="Opción 3" required>
+                                    <input type="text" class="form-control mb-1" placeholder="Opción 4" required>
+                                </div>
+                                <select class="form-select mb-2" required>
+                                    <option value="">Selecciona la respuesta correcta</option>
+                                    <option value="0">Opción 1</option>
+                                    <option value="1">Opción 2</option>
+                                    <option value="2">Opción 3</option>
+                                    <option value="3">Opción 4</option>
+                                </select>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">Eliminar Pregunta</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary mb-3" onclick="addQuestion()">Agregar Pregunta</button>
+                        <button type="submit" class="btn btn-success">Guardar Examen</button>
+                    </form>
+                </div>
+                <h3>Exámenes Guardados</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Preguntas</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="savedExamsList">
+                    </tbody>
+                </table>
+            </div>
+            <div id="examen" class="section d-none">
+                <h2>Examen</h2>
+                <div class="mt-4">
+                    <h3>Exámenes Activos</h3>
+                    <div id="activeExamsList" class="row"></div>
+                    <div id="examTaking" class="d-none">
+                        <h4 id="examTitleDisplay"></h4>
+                        <form id="takeExamForm">
+                            <div id="examQuestions"></div>
+                            <button type="submit" class="btn btn-primary">Enviar Examen</button>
+                        </form>
+                        <div id="examResult" class="d-none mt-3">
+                            <h5>Resultado</h5>
+                            <p id="scoreDisplay"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="examen_aprobados" class="section d-none">
+                <h2>Examen Aprobados</h2>
+            <div id="approvedExamsList" class="row"></div>
+            </div>
+            <!-- Configuración section removed -->
+            <div id="salir" class="section d-none">
+                <h2>Salir</h2>
+                <p>¿Estás seguro de que quieres salir?</p>
+                <button class="btn btn-danger" onclick="logout()">Salir</button>
+            </div>
+
+            <div id="usuarios" class="section d-none">
+                <h2>Gestión de Usuarios</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl)
+            })
+
+            // Hide menus for non-admin users
+            if (!isAdmin()) {
+                document.getElementById('menu-especialidades').style.display = 'none';
+                document.getElementById('menu-certificados').style.display = 'none';
+            }
+        });
+    </script>
+    <script>
+        // New helper function to get logged-in user's nombre from localStorage
+        function getUserNombre() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return null;
+                const user = JSON.parse(userStr);
+                return user.nombre || null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // Check if current user is admin (only ministrylion@gmail.com)
+        function isAdmin() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return false;
+                const user = JSON.parse(userStr);
+                return user.email === 'ministrylion@gmail.com';
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('d-none');
+            });
+            document.getElementById(sectionId).classList.remove('d-none');
+
+            if (sectionId === 'examen') {
+                displayActiveExams();
+            } else if (sectionId === 'examen_aprobados') {
+                displayApprovedExams();
+            } else if (sectionId === 'configuracion') {
+                // Configuración section removed - do nothing
+            } else if (sectionId === 'especialidades') {
+                displaySavedExams();
+            }
+        }
+
+
+
+
+
+        function displaySavedExams() {
+            const exams = JSON.parse(localStorage.getItem('exams')) || [];
+            const tbody = document.getElementById('savedExamsList');
+            tbody.innerHTML = '';
+
+            if (exams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay exámenes guardados.</td></tr>';
+                return;
+            }
+
+            exams.forEach(exam => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${exam.title}</td>
+                    <td>${exam.questions.length}</td>
+                    <td>${exam.active ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-${exam.active ? 'warning' : 'success'}" onclick="toggleExamStatus(${exam.id})">${exam.active ? 'Desactivar' : 'Activar'}</button>
+                        ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="deleteExam(${exam.id})">Eliminar</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleExamStatus(examId) {
+            let exams = JSON.parse(localStorage.getItem('exams')) || [];
+            const examIndex = exams.findIndex(e => e.id === examId);
+            if (examIndex > -1) {
+                exams[examIndex].active = !exams[examIndex].active;
+                localStorage.setItem('exams', JSON.stringify(exams));
+                displaySavedExams();
+                displayActiveExams(); // To update the other view
+            }
+        }
+
+        function deleteExam(examId) {
+            if (confirm('¿Estás seguro de que quieres eliminar este examen? Esta acción no se puede deshacer.')) {
+                let exams = JSON.parse(localStorage.getItem('exams')) || [];
+                exams = exams.filter(e => e.id !== examId);
+                localStorage.setItem('exams', JSON.stringify(exams));
+                displaySavedExams();
+                displayActiveExams(); // To update the other view
+            }
+        }
+
+        function logout() {
+            // Implement logout functionality here
+            alert("Has salido de la sesión.");
+        }
+
+        function showCreateExamForm() {
+            document.getElementById('examForm').classList.remove('d-none');
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const createExamForm = document.getElementById('createExamForm');
+            if (createExamForm) {
+                createExamForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const title = document.getElementById('examTitle').value;
+                    const logoInput = document.getElementById('examLogo');
+                    const questions = [];
+                    document.querySelectorAll('#questionsContainer .question').forEach(qContainer => {
+                        const questionText = qContainer.querySelector('input[placeholder="Escribe la pregunta"]').value;
+                        const options = Array.from(qContainer.querySelectorAll('.options input')).map(opt => opt.value);
+                        const correct = parseInt(qContainer.querySelector('select').value, 10);
+                        if (questionText && options.every(o => o) && !isNaN(correct)) {
+                            questions.push({ question: questionText, options: options, correct: correct });
+                        }
+                    });
+
+                    if (title.trim() === '' || questions.length === 0) {
+                        alert('Por favor, completa el título y al menos una pregunta completa.');
+                        return;
+                    }
+
+                    const file = logoInput.files[0];
+
+                    const saveExam = (logoDataUrl = '') => {
+                        let exams = JSON.parse(localStorage.getItem('exams')) || [];
+                        const newExam = {
+                            id: Date.now(),
+                            title: title,
+                            questions: questions,
+                            active: false, // Inactive by default
+                            image: logoDataUrl
+                        };
+                        exams.push(newExam);
+                        localStorage.setItem('exams', JSON.stringify(exams));
+                        
+                        createExamForm.reset();
+                        document.getElementById('examForm').classList.add('d-none');
+                        displaySavedExams();
+                        alert('Examen guardado con éxito.');
+                    };
+
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            saveExam(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        saveExam();
+                    }
+                });
+            }
+        });
+        
+        let exams = JSON.parse(localStorage.getItem('exams')) || [];
+        let examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+
+function displayActiveExams() {
+    console.log("Attempting to display active exams.");
+    const container = document.getElementById('activeExamsList');
+    container.innerHTML = '';
+
+    let exams = JSON.parse(localStorage.getItem('exams')) || [];
+    console.log("Exams found in localStorage:", exams);
+    
+    const activeExams = exams.filter(e => e.active);
+    console.log("Active exams found:", activeExams);
+
+    if (activeExams.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay exámenes activos disponibles en este momento.</p>';
+        console.log("No active exams to display.");
+        return;
+    }
+    activeExams.forEach(exam => {
+        console.log("Displaying exam:", exam);
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-3';
+        col.innerHTML = `
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${exam.title}</h5>
+                    <p class="card-text flex-grow-1">Preguntas: ${exam.questions.length}</p>
+                    <button class="btn btn-primary mt-auto" onclick="takeExam(${exam.id})">Tomar Examen</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(col);
+    });
+}
+
+        function takeExam(id) {
+            const allExams = JSON.parse(localStorage.getItem('exams')) || [];
+            const exam = allExams.find(e => e.id === id);
+
+            if (!exam) {
+                alert('El examen seleccionado no se encontró.');
+                return;
+            }
+
+            document.getElementById('examTitleDisplay').textContent = exam.title;
+            const questionsDiv = document.getElementById('examQuestions');
+            questionsDiv.innerHTML = '';
+            if (exam.image) {
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'mb-3';
+                imgDiv.innerHTML = `<img src="${exam.image}" alt="Imagen del examen" style="max-width: 400px; width: 100%; height: auto;">`;
+                questionsDiv.appendChild(imgDiv);
+            }
+            exam.questions.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'mb-3';
+                qDiv.innerHTML = `
+                    <p><strong>${q.question}</strong></p>
+                    ${q.options.map((opt, i) => `<div class="form-check">
+                        <input class="form-check-input" type="radio" name="q${index}" value="${i}" required>
+                        <label class="form-check-label">${opt}</label>
+                    </div>`).join('')}
+                `;
+                questionsDiv.appendChild(qDiv);
+            });
+            document.getElementById('activeExamsList').classList.add('d-none');
+            document.getElementById('examTaking').classList.remove('d-none');
+        }
+
+        document.getElementById('takeExamForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const answers = {};
+            for (let [key, value] of formData.entries()) {
+                answers[key] = parseInt(value);
+            }
+            const exam = exams.find(e => e.title === document.getElementById('examTitleDisplay').textContent);
+            let correct = 0;
+            exam.questions.forEach((q, index) => {
+                if (answers[`q${index}`] === q.correct) correct++;
+            });
+            const score = (correct / exam.questions.length) * 100;
+            document.getElementById('scoreDisplay').textContent = `Puntuación: ${score.toFixed(2)} / 100`;
+            document.getElementById('examResult').classList.remove('d-none');
+            this.classList.add('d-none');
+
+            // Save result if approved
+            if (score > 70) {
+                const result = {
+                    examId: exam.id,
+                    title: exam.title,
+                    score: score,
+                    date: new Date().toISOString(),
+                    image: exam.image,
+                    userName: getUserNombre()
+                };
+                examResults.push(result);
+                localStorage.setItem('examResults', JSON.stringify(examResults));
+            }
+        });
+
+        function displayApprovedExams() {
+            const container = document.getElementById('approvedExamsList');
+            container.innerHTML = '';
+            const approved = examResults.filter(r => r.score > 70);
+            if (approved.length === 0) {
+                container.innerHTML = '<p>No hay exámenes aprobados aún.</p>';
+                return;
+            }
+            approved.forEach((result, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                col.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${result.title}</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="card-text mb-0">Puntuación: ${result.score.toFixed(2)} / 100</p>
+                                ${result.image ? `<img src="${result.image}" alt="Imagen del examen" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : ''}
+                            </div>
+                            <p class="card-text mt-2"><small class="text-muted">Fecha: ${new Date(result.date).toLocaleDateString()}</small></p>
+                            <button class="btn btn-success" onclick="downloadCertificate(${index})">Descargar PDF</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+            async function downloadCertificate(resultIndex) {
+                const { jsPDF } = window.jspdf;
+                let examResultsForDisplay = examResults.filter(r => r.score > 70);
+                const result = examResultsForDisplay[resultIndex];
+                const config = JSON.parse(localStorage.getItem('certificateConfig')) || {};
+
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // Background
+                if (config.background) {
+                    doc.addImage(config.background, 'JPEG', 0, 0, pageWidth, pageHeight);
+                }
+
+                // Title
+                doc.setFontSize(40);
+                const title = config.title || 'Certificado de Aprobación';
+                const titleX = (pageWidth * (config.titleX || 50)) / 100;
+                const titleY = (pageHeight * (config.titleY || 20)) / 100;
+                doc.text(title, titleX, titleY, { align: 'center' });
+
+                // Score
+                doc.setFontSize(20);
+                const scoreText = (config.scoreText || 'Puntuación: {score} / 100').replace('{score}', result.score.toFixed(2));
+                const scoreX = (pageWidth * (config.scoreX || 50)) / 100;
+                const scoreY = (pageHeight * (config.scoreY || 40)) / 100;
+                doc.text(scoreText, scoreX, scoreY, { align: 'center' });
+
+                // Date
+                const dateText = (config.dateText || 'Fecha: {date}').replace('{date}', new Date(result.date).toLocaleDateString());
+                const dateX = (pageWidth * (config.dateX || 50)) / 100;
+                const dateY = (pageHeight * (config.dateY || 60)) / 100;
+                doc.text(dateText, dateX, dateY, { align: 'center' });
+
+                // Exam Name - dynamically use first approved exam with non-empty title or empty
+                let examName = '';
+                for (const r of examResultsForDisplay) {
+                    if (r.title && r.title.trim() !== '') {
+                        examName = r.title;
+                        break;
+                    }
+                }
+
+                if (examName) {
+                    const examNameX = (pageWidth * (config.examNameX || 50)) / 100;
+                    const examNameY = (pageHeight * (config.examNameY || 30)) / 100;
+                    const examNameFontSize = parseInt(config.examNameFontSize, 10) || 18;
+                    doc.setFontSize(examNameFontSize);
+                    doc.text(examName, examNameX, examNameY, { align: 'center' });
+                }
+
+                // Signatures
+                if (config.signature1Image) {
+                    const sig1X = (pageWidth * (config.signature1X || 20)) / 100;
+                    const sig1Y = (pageHeight * (config.signature1Y || 80)) / 100;
+                    doc.addImage(config.signature1Image, 'PNG', sig1X - 50, sig1Y - 25, 100, 50);
+                }
+                if (config.signature1Name) {
+                    doc.setFontSize(config.signature1FontSize || 14);
+                    const sig1NameX = (pageWidth * (config.signature1X || 20)) / 100;
+                    const sig1NameY = (pageHeight * (config.signature1Y || 80)) / 100 + 40;
+                    doc.text(config.signature1Name, sig1NameX, sig1NameY, { align: 'center' });
+                }
+
+                if (config.signature2Image) {
+                    const sig2X = (pageWidth * (config.signature2X || 80)) / 100;
+                    const sig2Y = (pageHeight * (config.signature2Y || 80)) / 100;
+                    doc.addImage(config.signature2Image, 'PNG', sig2X - 50, sig2Y - 25, 100, 50);
+                }
+                if (config.signature2Name) {
+                    doc.setFontSize(config.signature2FontSize || 14);
+                    const sig2NameX = (pageWidth * (config.signature2X || 80)) / 100;
+                    const sig2NameY = (pageHeight * (config.signature2Y || 80)) / 100 + 40;
+                    doc.text(config.signature2Name, sig2NameX, sig2NameY, { align: 'center' });
+                }
+                
+                doc.save(`certificado-${result.title.replace(/ /g, '_')}.pdf`);
+            }
+
+    </script>
+</body>
+</html>

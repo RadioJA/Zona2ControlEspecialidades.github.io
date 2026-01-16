@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Certificado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --certificate-bg: url('Certificados/Cert_1.png');
+        }
+        body {
+            background-image: url('Fondo/zona2.png');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 20px;
+        }
+        .certificate-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-family: inherit;
+            text-align: center;
+            background-image: var(--certificate-bg);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .certificate-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .user-name {
+            position: absolute;
+            font-size: 36px;
+            font-weight: bold;
+            top: 130px;
+            left: 50%;
+        }
+        .course-name {
+            position: absolute;
+            font-size: 24px;
+            top: 180px;
+            left: 50%;
+        }
+
+        .date {
+            position: absolute;
+            font-size: 18px;
+            top: 250px;
+            left: 50%;
+        }
+        @media print {
+            body {
+                background-image: none;
+                padding: 0;
+            }
+            #configuracion-menu, .btn {
+                display: none;
+            }
+            .certificate-container {
+                -webkit-print-color-adjust: exact;
+                background-image: var(--certificate-bg) !important;
+                background-size: 100% 100% !important;
+                background-repeat: no-repeat !important;
+                background-position: center !important;
+                width: 800px;
+                height: 600px;
+                box-shadow: none;
+                margin: 1cm auto;
+                border: none;
+            }
+        }
+        @media (max-width: 768px) {
+            .certificate-container {
+                width: 90vw;
+                height: 67.5vw;
+                padding: 10px;
+            }
+            .user-name {
+                font-size: 5vw;
+                top: 18vw;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .course-name {
+                font-size: 3.5vw;
+                top: 25vw;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .date {
+                font-size: 2.5vw;
+                margin-top: 9vw;
+            }
+            #configuracion-menu {
+                width: 90vw;
+                top: auto;
+                bottom: 20px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="certificates-wrapper" class="container-fluid d-flex flex-wrap justify-content-center align-items-center" style="min-height: 100vh;">
+        <!-- Los certificados se insertarán aquí -->
+    </div>
+
+    <!-- Configuración del Certificado -->
+    <div id="configuracion-menu" class="position-fixed top-50 end-0 translate-middle-y bg-white p-3 border rounded shadow" style="width: auto; max-height: 80vh; overflow-y: auto; z-index: 1000;">
+        <h5>Configurar Certificado</h5>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" id="configTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="usuario-tab" data-bs-toggle="tab" data-bs-target="#usuario" type="button" role="tab" aria-controls="usuario" aria-selected="true">Usuario</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="curso-tab" data-bs-toggle="tab" data-bs-target="#curso" type="button" role="tab" aria-controls="curso" aria-selected="false">Curso</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="fecha-tab" data-bs-toggle="tab" data-bs-target="#fecha" type="button" role="tab" aria-controls="fecha" aria-selected="false">Fecha</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="firmas-tab" data-bs-toggle="tab" data-bs-target="#firmas" type="button" role="tab" aria-controls="firmas" aria-selected="false">Firmas</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="modelo-tab" data-bs-toggle="tab" data-bs-target="#modelo" type="button" role="tab" aria-controls="modelo" aria-selected="false">Modelo</button>
+            </li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content mt-3" id="configTabContent">
+            <!-- Usuario Tab -->
+            <div class="tab-pane fade show active" id="usuario" role="tabpanel" aria-labelledby="usuario-tab">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de Usuario</label>
+                    <input type="text" id="userNameInput" class="form-control mb-2" placeholder="Ingrese nombre de usuario">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de Fuente: <span id="userFontSizeValue">36</span>px</label>
+                    <input type="range" class="form-range" id="userFontSizeRange" min="20" max="60" value="36">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Vertical: <span id="userPositionValue">130</span>px</label>
+                    <input type="range" class="form-range" id="userPositionRange" min="0" max="600" value="130">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Horizontal: <span id="userPositionXValue">0</span>px</label>
+                    <input type="range" class="form-range" id="userPositionXRange" min="-400" max="400" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fuente</label>
+                    <select id="userFontFamily" class="form-select">
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Courier New">Courier New</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Curso Tab -->
+            <div class="tab-pane fade" id="curso" role="tabpanel" aria-labelledby="curso-tab">
+                <div class="mb-3">
+                    <label class="form-label">Nombre del Curso</label>
+                    <input type="text" id="courseNameInput" class="form-control mb-2" placeholder="Ingrese nombre del curso" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de Fuente: <span id="courseFontSizeValue">24</span>px</label>
+                    <input type="range" class="form-range" id="courseFontSizeRange" min="16" max="40" value="24">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Vertical: <span id="coursePositionValue">180</span>px</label>
+                    <input type="range" class="form-range" id="coursePositionRange" min="0" max="600" value="180">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Horizontal: <span id="coursePositionXValue">0</span>px</label>
+                    <input type="range" class="form-range" id="coursePositionXRange" min="-400" max="400" value="0">
+                </div>
+            </div>
+
+            <!-- Fecha Tab -->
+            <div class="tab-pane fade" id="fecha" role="tabpanel" aria-labelledby="fecha-tab">
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de Fuente: <span id="dateFontSizeValue">18</span>px</label>
+                    <input type="range" class="form-range" id="dateFontSizeRange" min="12" max="30" value="18">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Vertical: <span id="datePositionValue">250</span>px</label>
+                    <input type="range" class="form-range" id="datePositionRange" min="0" max="600" value="250">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Horizontal: <span id="datePositionXValue">0</span>px</label>
+                    <input type="range" class="form-range" id="datePositionXRange" min="-400" max="400" value="0">
+                </div>
+            </div>
+
+            <!-- Firmas Tab -->
+            <div class="tab-pane fade" id="firmas" role="tabpanel" aria-labelledby="firmas-tab">
+                <h6>Firma 1</h6>
+                <div class="mb-3">
+                    <label class="form-label">Imagen de Firma</label>
+                    <input type="file" id="signature1File" class="form-control" accept="image/*">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre (opcional)</label>
+                    <input type="text" id="signature1Name" class="form-control" placeholder="Nombre de la firma">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de Fuente del Nombre: <span id="signature1NameFontSizeValue">14</span>px</label>
+                    <input type="range" class="form-range" id="signature1NameFontSizeRange" min="8" max="24" value="14">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición X del Nombre: <span id="signature1NameXValue">20</span>%</label>
+                    <input type="range" class="form-range" id="signature1NameXRange" min="0" max="100" value="20">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Y del Nombre: <span id="signature1NameYValue">85</span>%</label>
+                    <input type="range" class="form-range" id="signature1NameYRange" min="0" max="100" value="85">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición X: <span id="signature1XValue">20</span>%</label>
+                    <input type="range" class="form-range" id="signature1XRange" min="0" max="100" value="20">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Y: <span id="signature1YValue">80</span>%</label>
+                    <input type="range" class="form-range" id="signature1YRange" min="0" max="100" value="80">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ancho: <span id="signature1WidthValue">100</span>px</label>
+                    <input type="range" class="form-range" id="signature1WidthRange" min="50" max="200" value="100">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Alto: <span id="signature1HeightValue">50</span>px</label>
+                    <input type="range" class="form-range" id="signature1HeightRange" min="25" max="100" value="50">
+                </div>
+
+                <hr>
+
+                <h6>Firma 2</h6>
+                <div class="mb-3">
+                    <label class="form-label">Imagen de Firma</label>
+                    <input type="file" id="signature2File" class="form-control" accept="image/*">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre (opcional)</label>
+                    <input type="text" id="signature2Name" class="form-control" placeholder="Nombre de la firma">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de Fuente del Nombre: <span id="signature2NameFontSizeValue">14</span>px</label>
+                    <input type="range" class="form-range" id="signature2NameFontSizeRange" min="8" max="24" value="14">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición X del Nombre: <span id="signature2NameXValue">80</span>%</label>
+                    <input type="range" class="form-range" id="signature2NameXRange" min="0" max="100" value="80">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Y del Nombre: <span id="signature2NameYValue">85</span>%</label>
+                    <input type="range" class="form-range" id="signature2NameYRange" min="0" max="100" value="85">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición X: <span id="signature2XValue">80</span>%</label>
+                    <input type="range" class="form-range" id="signature2XRange" min="0" max="100" value="80">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Posición Y: <span id="signature2YValue">80</span>%</label>
+                    <input type="range" class="form-range" id="signature2YRange" min="0" max="100" value="80">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ancho: <span id="signature2WidthValue">100</span>px</label>
+                    <input type="range" class="form-range" id="signature2WidthRange" min="50" max="200" value="100">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Alto: <span id="signature2HeightValue">50</span>px</label>
+                    <input type="range" class="form-range" id="signature2HeightRange" min="25" max="100" value="50">
+                </div>
+            </div>
+
+            <!-- Modelo Tab -->
+            <div class="tab-pane fade" id="modelo" role="tabpanel" aria-labelledby="modelo-tab">
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Plantilla de Certificado</label>
+                    <select id="certificateTemplate" class="form-select">
+                        <option value="Cert_1.png">Certificado 1</option>
+                        <option value="Cert_2.png">Certificado 2</option>
+                        <option value="Cert_3.png">Certificado 3</option>
+                        <option value="Cert_4.png">Certificado 4</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Vista Previa del Certificado</label>
+                    <div class="border p-2" style="max-width: 400px;">
+                        <img id="certificatePreview" src="Certificados/Diploma.png" alt="Vista Previa del Certificado" class="img-fluid" style="width: 100%; height: auto;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="save-config-button" class="btn btn-primary w-100 mt-3">Guardar Configuración</button>
+        <button id="download-button" class="btn btn-secondary w-100 mt-2">Imprimir</button>
+    </div>
+
+
+
+    <script>
+        // Check if current user is admin (only ministrylion@gmail.com)
+        function isAdmin() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return false;
+                const user = JSON.parse(userStr);
+                return user.email === 'ministrylion@gmail.com';
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Variable to hold the current data URL for signature images
+        let signature1ImageDataUrl = null;
+        let signature2ImageDataUrl = null;
+        let globalConfig = {};
+
+        async function loadGlobalConfig() {
+            try {
+                const response = await fetch('/api/certificate-configs/global');
+                if (response.ok) {
+                    const data = await response.json();
+                    globalConfig = JSON.parse(data.config_value || '{}'); // Keep for potential future backend
+                } else {
+                    // Fallback to localStorage if API fails or doesn't exist
+                    globalConfig = JSON.parse(localStorage.getItem('certificateConfig') || '{}');
+                }
+            } catch (error) {
+                // Fallback to localStorage if API fails or doesn't exist
+                globalConfig = JSON.parse(localStorage.getItem('certificateConfig') || '{}');
+                console.error('Error loading global config:', error);
+            }
+        }
+
+        async function saveGlobalConfig() {
+            // Collect all current values
+            globalConfig.userNameFontSize = parseInt(document.getElementById('userFontSizeRange').value);
+            globalConfig.userNameTop = parseInt(document.getElementById('userPositionRange').value);
+            globalConfig.userNameLeft = parseInt(document.getElementById('userPositionXRange').value);
+            globalConfig.userFontFamily = document.getElementById('userFontFamily').value;
+            globalConfig.courseNameFontSize = parseInt(document.getElementById('courseFontSizeRange').value);
+            globalConfig.courseNameTop = parseInt(document.getElementById('coursePositionRange').value);
+            globalConfig.courseNameLeft = parseInt(document.getElementById('coursePositionXRange').value);
+            globalConfig.dateFontSize = parseInt(document.getElementById('dateFontSizeRange').value);
+            globalConfig.dateTop = parseInt(document.getElementById('datePositionRange').value);
+            globalConfig.dateLeft = parseInt(document.getElementById('datePositionXRange').value);
+            globalConfig.certificateTemplate = document.getElementById('certificateTemplate').value;
+            // Signatures
+            const sig1File = document.getElementById('signature1File').files[0];
+            const sig2File = document.getElementById('signature2File').files[0];
+
+            if (sig1File) globalConfig.signature1Image = await fileToDataUrl(sig1File);
+            if (sig2File) globalConfig.signature2Image = await fileToDataUrl(sig2File);
+
+            globalConfig.signature1X = parseInt(document.getElementById('signature1XRange').value);
+            globalConfig.signature1Y = parseInt(document.getElementById('signature1YRange').value);
+            globalConfig.signature1Width = parseInt(document.getElementById('signature1WidthRange').value);
+            globalConfig.signature1Height = parseInt(document.getElementById('signature1HeightRange').value);
+            globalConfig.signature1Name = document.getElementById('signature1Name').value;
+            globalConfig.signature1NameFontSize = parseInt(document.getElementById('signature1NameFontSizeRange').value);
+
+            globalConfig.signature2X = parseInt(document.getElementById('signature2XRange').value);
+            globalConfig.signature2Y = parseInt(document.getElementById('signature2YRange').value);
+            globalConfig.signature2Width = parseInt(document.getElementById('signature2WidthRange').value);
+            globalConfig.signature2Height = parseInt(document.getElementById('signature2HeightRange').value);
+            globalConfig.signature2Name = document.getElementById('signature2Name').value;
+            globalConfig.signature2NameFontSize = parseInt(document.getElementById('signature2NameFontSizeRange').value);
+            
+            try {
+                localStorage.setItem('certificateConfig', JSON.stringify(globalConfig));
+                alert('Configuración guardada exitosamente en el almacenamiento local.');
+            } catch (error) {
+                console.error('Error saving global config:', error);
+                alert('Error al guardar la configuración.');
+            }
+        }
+
+        function applyConfigToUI() {
+            // User settings
+            document.getElementById('userFontSizeRange').value = globalConfig.userNameFontSize || 36;
+            document.getElementById('userFontSizeValue').textContent = globalConfig.userNameFontSize || 36;
+            document.getElementById('userPositionRange').value = globalConfig.userNameTop || 130;
+            document.getElementById('userPositionValue').textContent = globalConfig.userNameTop || 130;
+            document.getElementById('userPositionXRange').value = globalConfig.userNameLeft || 0;
+            document.getElementById('userPositionXValue').textContent = globalConfig.userNameLeft || 0;
+            document.getElementById('userFontFamily').value = globalConfig.userFontFamily || 'Times New Roman';
+
+            // Course settings
+            document.getElementById('courseFontSizeRange').value = globalConfig.courseNameFontSize || 24;
+            document.getElementById('courseFontSizeValue').textContent = globalConfig.courseNameFontSize || 24;
+            document.getElementById('coursePositionRange').value = globalConfig.courseNameTop || 180;
+            document.getElementById('coursePositionValue').textContent = globalConfig.courseNameTop || 180;
+            document.getElementById('coursePositionXRange').value = globalConfig.courseNameLeft || 0;
+            document.getElementById('coursePositionXValue').textContent = globalConfig.courseNameLeft || 0;
+
+            // Date settings
+            document.getElementById('dateFontSizeRange').value = globalConfig.dateFontSize || 18;
+            document.getElementById('dateFontSizeValue').textContent = globalConfig.dateFontSize || 18;
+            document.getElementById('datePositionRange').value = globalConfig.dateTop || 250;
+            document.getElementById('datePositionValue').textContent = globalConfig.dateTop || 250;
+            document.getElementById('datePositionXRange').value = globalConfig.dateLeft || 0;
+            document.getElementById('datePositionXValue').textContent = globalConfig.dateLeft || 0;
+
+            // Signature settings
+            // No preview to set for file inputs
+            document.getElementById('signature1XRange').value = globalConfig.signature1X || 50;
+            document.getElementById('signature1XValue').textContent = globalConfig.signature1X || 50;
+            document.getElementById('signature1YRange').value = globalConfig.signature1Y || 400;
+            document.getElementById('signature1YValue').textContent = globalConfig.signature1Y || 400;
+            document.getElementById('signature1WidthRange').value = globalConfig.signature1Width || 100;
+            document.getElementById('signature1WidthValue').textContent = globalConfig.signature1Width || 100;
+            document.getElementById('signature1HeightRange').value = globalConfig.signature1Height || 50;
+            document.getElementById('signature1HeightValue').textContent = globalConfig.signature1Height || 50;
+            document.getElementById('signature1Name').value = globalConfig.signature1Name || '';
+            document.getElementById('signature1NameFontSizeRange').value = globalConfig.signature1NameFontSize || 14;
+            document.getElementById('signature1NameFontSizeValue').textContent = globalConfig.signature1NameFontSize || 14;
+
+            // No preview to set for file inputs
+            document.getElementById('signature2XRange').value = globalConfig.signature2X || 400;
+            document.getElementById('signature2XValue').textContent = globalConfig.signature2X || 400;
+            document.getElementById('signature2YRange').value = globalConfig.signature2Y || 400;
+            document.getElementById('signature2YValue').textContent = globalConfig.signature2Y || 400;
+            document.getElementById('signature2WidthRange').value = globalConfig.signature2Width || 100;
+            document.getElementById('signature2WidthValue').textContent = globalConfig.signature2Width || 100;
+            document.getElementById('signature2HeightRange').value = globalConfig.signature2Height || 50;
+            document.getElementById('signature2HeightValue').textContent = globalConfig.signature2Height || 50;
+            document.getElementById('signature2Name').value = globalConfig.signature2Name || '';
+            document.getElementById('signature2NameFontSizeRange').value = globalConfig.signature2NameFontSize || 14;
+            document.getElementById('signature2NameFontSizeValue').textContent = globalConfig.signature2NameFontSize || 14;
+
+            // Apply styles
+            // applyStyles(); // called after append
+            applySignatureStyles();
+        }
+
+        function createCertificateElement(result) {
+            const certificateContainer = document.createElement('div');
+            certificateContainer.className = 'certificate-container m-3';
+
+            const userNameDiv = document.createElement('div');
+            userNameDiv.className = 'user-name';
+            userNameDiv.textContent = result.userName || "Nombre de Usuario de Ejemplo";
+
+            const courseNameDiv = document.createElement('div');
+            courseNameDiv.className = 'course-name';
+            courseNameDiv.textContent = result.title || "Nombre del Curso de Ejemplo";
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'date';
+            dateDiv.textContent = new Date(result.date || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // Signature images
+            const signature1Img = document.createElement('img');
+            signature1Img.className = 'signature signature1';
+            signature1Img.style.position = 'absolute';
+            signature1Img.style.display = 'none';
+
+            const signature2Img = document.createElement('img');
+            signature2Img.className = 'signature signature2';
+            signature2Img.style.position = 'absolute';
+            signature2Img.style.display = 'none';
+
+            // Signature names
+            const signature1NameDiv = document.createElement('div');
+            signature1NameDiv.className = 'signature-name signature1-name';
+            signature1NameDiv.style.position = 'absolute';
+            signature1NameDiv.style.display = 'none';
+
+            const signature2NameDiv = document.createElement('div');
+            signature2NameDiv.className = 'signature-name signature2-name';
+            signature2NameDiv.style.position = 'absolute';
+            signature2NameDiv.style.display = 'none';
+
+            certificateContainer.append(userNameDiv, courseNameDiv, dateDiv, signature1Img, signature2Img, signature1NameDiv, signature2NameDiv);
+            return certificateContainer;
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Load global configuration first
+            await loadGlobalConfig();
+            applyConfigToUI();
+            applyCertificateTemplate();
+
+            const wrapper = document.getElementById('certificates-wrapper');
+
+            // Limpiar el contenedor antes de añadir elementos.
+            wrapper.innerHTML = '';
+
+            // Obtener el usuario logueado desde localStorage
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const loggedInUserName = user.name || "Nombre de Usuario de Ejemplo";
+
+            // Verificar si hay un resultIndex en la URL (desde historial)
+            const urlParams = new URLSearchParams(window.location.search);
+            const resultIndex = urlParams.get('resultIndex');
+            let courseTitle = "Nombre del Curso de Ejemplo";
+            let resultData = null;
+
+            const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+
+            if (resultIndex !== null) {
+                // Get the specific result from localStorage
+                resultData = examResults[parseInt(resultIndex)];
+                if (resultData) {
+                    courseTitle = resultData.title;
+                }
+            } else {
+                // Set default to latest passed exam for user from localStorage
+                const userResults = examResults.filter(r => r.userName === loggedInUserName && r.score > 70).sort((a,b) => new Date(b.date) - new Date(a.date));
+                if (userResults.length > 0) {
+                    resultData = userResults[0];
+                    courseTitle = userResults[0].title;
+                }
+            }
+
+            // Mostrar un certificado de vista previa
+            const previewData = {
+                userName: loggedInUserName,
+                title: courseTitle,
+                date: Date.now()
+            };
+            const certificateElement = createCertificateElement(previewData);
+
+            // Aplicar estilos guardados al certificado
+            const userFontSize = globalConfig.userNameFontSize || 36;
+            const userTop = globalConfig.userNameTop || 130;
+            const userLeft = globalConfig.userNameLeft || 0;
+
+            const courseFontSize = globalConfig.courseNameFontSize || 24;
+            const courseTop = globalConfig.courseNameTop || 180;
+            const courseLeft = globalConfig.courseNameLeft || 0;
+
+            const dateFontSize = globalConfig.dateFontSize || 18;
+            const dateTop = globalConfig.dateTop || 250;
+            const dateLeft = globalConfig.dateLeft || 0;
+
+            const userNameDiv = certificateElement.querySelector('.user-name');
+            const courseNameDiv = certificateElement.querySelector('.course-name');
+            const dateDiv = certificateElement.querySelector('.date');
+
+            if (userNameDiv) {
+                userNameDiv.style.fontSize = userFontSize + 'px';
+                userNameDiv.style.top = userTop + 'px';
+                userNameDiv.style.transform = 'translateX(calc(-50% + ' + userLeft + 'px))';
+            }
+
+            if (courseNameDiv) {
+                courseNameDiv.style.fontSize = courseFontSize + 'px';
+                courseNameDiv.style.top = courseTop + 'px';
+                courseNameDiv.style.transform = 'translateX(calc(-50% + ' + courseLeft + 'px))';
+            }
+
+            if (dateDiv) {
+                dateDiv.style.fontSize = dateFontSize + 'px';
+                dateDiv.style.top = dateTop + 'px';
+                dateDiv.style.transform = 'translateX(calc(-50% + ' + dateLeft + 'px))';
+            }
+
+            wrapper.appendChild(certificateElement);
+
+            applyStyles();
+
+            // Botón para volver al inicio
+            const backButton = document.createElement('a');
+            backButton.href = 'admin_panel.html';
+            backButton.className = 'btn btn-secondary';
+            backButton.textContent = 'Volver';
+
+            // Botón para imprimir
+            const downloadPdfButton = document.createElement('button');
+            downloadPdfButton.id = 'download-button-below';
+            downloadPdfButton.className = 'btn btn-success mt-2';
+            downloadPdfButton.textContent = 'Imprimir';
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'text-center mt-4 d-flex justify-content-between';
+            backButton.style.width = '48%';
+            downloadPdfButton.style.width = '48%';
+            buttonContainer.appendChild(backButton);
+            buttonContainer.appendChild(downloadPdfButton);
+
+            wrapper.appendChild(buttonContainer);
+
+            // Restringir acceso al menú de configuración solo para administradores
+            if (!isAdmin()) {
+                document.getElementById('configuracion-menu').style.display = 'none';
+            }
+
+            // Inicializar controles
+            initializeControls();
+        });
+
+
+
+
+
+        function applyUserNameStyles(fontSize, top, left) {
+            const userNameDiv = document.querySelector('.user-name');
+            if (userNameDiv) {
+                userNameDiv.style.fontSize = fontSize + 'px';
+                userNameDiv.style.top = top + 'px';
+                userNameDiv.style.transform = 'translateX(calc(-50% + ' + left + 'px))';
+            }
+        }
+
+        function applyCourseNameStyles(fontSize, top, left) {
+            const courseNameDiv = document.querySelector('.course-name');
+            if (courseNameDiv) {
+                courseNameDiv.style.fontSize = fontSize + 'px';
+                courseNameDiv.style.top = top + 'px';
+                courseNameDiv.style.transform = 'translateX(calc(-50% + ' + left + 'px))';
+            }
+        }
+
+        function applyDateStyles(fontSize, top, left) {
+            const dateDiv = document.querySelector('.date');
+            if (dateDiv) {
+                dateDiv.style.fontSize = fontSize + 'px';
+                dateDiv.style.top = top + 'px';
+                dateDiv.style.transform = 'translateX(calc(-50% + ' + left + 'px))';
+            }
+        }
+
+        function applyStyles() {
+            const config = globalConfig;
+
+            const userNameEl = document.querySelector('.user-name');
+            if (userNameEl) {
+                userNameEl.style.fontSize = (config.userNameFontSize || 36) + 'px';
+                userNameEl.style.top = (config.userNameTop || 130) + 'px';
+                userNameEl.style.left = '50%';
+                userNameEl.style.transform = `translateX(${(config.userNameLeft || 0)}px)`;
+                userNameEl.style.fontFamily = config.userFontFamily || 'Times New Roman';
+            }
+
+            const courseNameEl = document.querySelector('.course-name');
+            if (courseNameEl) {
+                courseNameEl.style.fontSize = (config.courseNameFontSize || 24) + 'px';
+                courseNameEl.style.top = (config.courseNameTop || 180) + 'px';
+                courseNameEl.style.left = '50%';
+                courseNameEl.style.transform = `translateX(${(config.courseNameLeft || 0)}px)`;
+            }
+
+            const dateEl = document.querySelector('.date');
+            if (dateEl) {
+                dateEl.style.fontSize = (config.dateFontSize || 18) + 'px';
+                dateEl.style.top = (config.dateTop || 250) + 'px';
+                dateEl.style.left = '50%';
+                dateEl.style.transform = `translateX(${(config.dateLeft || 0)}px)`;
+            }
+        }
+
+        function applySignatureStyles() {
+            const config = globalConfig;
+
+            const sig1Img = document.querySelector('.signature1');
+            if (sig1Img && config.signature1Image) {
+                sig1Img.src = config.signature1Image;
+                sig1Img.style.display = 'block';
+                sig1Img.style.left = (config.signature1X || 20) + '%';
+                sig1Img.style.top = (config.signature1Y || 80) + '%';
+                sig1Img.style.width = (config.signature1Width || 100) + 'px';
+                sig1Img.style.height = (config.signature1Height || 50) + 'px';
+                sig1Img.style.transform = 'translate(-50%, -50%)';
+            } else if (sig1Img) {
+                sig1Img.style.display = 'none';
+            }
+
+            const sig2Img = document.querySelector('.signature2');
+            if (sig2Img && config.signature2Image) {
+                sig2Img.src = config.signature2Image;
+                sig2Img.style.display = 'block';
+                sig2Img.style.left = (config.signature2X || 80) + '%';
+                sig2Img.style.top = (config.signature2Y || 80) + '%';
+                sig2Img.style.width = (config.signature2Width || 100) + 'px';
+                sig2Img.style.height = (config.signature2Height || 50) + 'px';
+                sig2Img.style.transform = 'translate(-50%, -50%)';
+            } else if (sig2Img) {
+                sig2Img.style.display = 'none';
+            }
+
+            // Apply signature name styles
+            const sig1NameDiv = document.querySelector('.signature1-name');
+            if (sig1NameDiv && config.signature1Name) {
+                sig1NameDiv.textContent = config.signature1Name;
+                sig1NameDiv.style.display = 'block';
+                sig1NameDiv.style.left = (config.signature1NameX || config.signature1X || 20) + '%';
+                sig1NameDiv.style.top = (config.signature1NameY || 85) + '%';
+                sig1NameDiv.style.fontSize = (config.signature1NameFontSize || 14) + 'px';
+                sig1NameDiv.style.transform = 'translate(-50%, -50%)';
+            } else if (sig1NameDiv) {
+                sig1NameDiv.style.display = 'none';
+            }
+
+            const sig2NameDiv = document.querySelector('.signature2-name');
+            if (sig2NameDiv && config.signature2Name) {
+                sig2NameDiv.textContent = config.signature2Name;
+                sig2NameDiv.style.display = 'block';
+                sig2NameDiv.style.left = (config.signature2NameX || config.signature2X || 80) + '%';
+                sig2NameDiv.style.top = (config.signature2NameY || config.signature2Y || 80) + '%';
+                sig2NameDiv.style.fontSize = (config.signature2NameFontSize || 14) + 'px';
+                sig2NameDiv.style.transform = 'translate(-50%, -50%)';
+            } else if (sig2NameDiv) {
+                sig2NameDiv.style.display = 'none';
+            }
+        }
+
+        function applyCertificateTemplate() {
+            const selectedTemplate = globalConfig.certificateTemplate || 'Diploma.png';
+            document.documentElement.style.setProperty('--certificate-bg', `url('Certificados/${selectedTemplate}')`);
+        }
+
+async function downloadCertificate() {
+    // Check if required libraries are loaded
+    if (!window.jspdf) {
+        alert('Error: La librería jsPDF no se cargó correctamente. Verifica tu conexión a internet.');
+        return;
+    }
+    if (!window.html2canvas) {
+        alert('Error: La librería html2canvas no se cargó correctamente. Verifica tu conexión a internet.');
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+
+        // Define result based on URL params or preview data
+        let result = {};
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultIndex = urlParams.get('resultIndex');
+        if (resultIndex !== null) {
+            const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+            result = examResults[parseInt(resultIndex)];
+        } else {
+            // For preview
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            result = {
+                userName: globalConfig.previewUserName || user.name || "Nombre de Usuario de Ejemplo",
+                title: globalConfig.previewCourseName || "Nombre del Curso de Ejemplo",
+                date: Date.now()
+            };
+        }
+
+                // Clone the currently displayed certificate to capture exactly as seen
+                const existingCertificate = document.querySelector('.certificate-container');
+                const certificateElement = existingCertificate.cloneNode(true);
+
+                // Add background image as img element to ensure it's captured
+                const selectedTemplate = globalConfig.certificateTemplate || 'Cert_1.png';
+                const bgImg = document.createElement('img');
+                bgImg.src = `Certificados/${selectedTemplate}`;
+                bgImg.style.position = 'absolute';
+                bgImg.style.top = '0';
+                bgImg.style.left = '0';
+                bgImg.style.width = '100%';
+                bgImg.style.height = '100%';
+                bgImg.style.zIndex = '-1';
+                certificateElement.appendChild(bgImg);
+
+                // Temporarily append to body for html2canvas, positioned off-screen
+                certificateElement.style.position = 'absolute';
+                certificateElement.style.left = '-9999px';
+                certificateElement.style.top = '-9999px';
+                certificateElement.style.width = '800px';
+                certificateElement.style.height = '600px';
+                document.body.appendChild(certificateElement);
+
+                // Use html2canvas to capture the certificate
+                const canvas = await html2canvas(certificateElement, {
+                    width: 800,
+                    height: 600,
+                    scale: 2, // Higher scale for better quality
+                    useCORS: true // Enable CORS for images
+                });
+
+                // Remove the temporary element
+                document.body.removeChild(certificateElement);
+
+                // Create PDF
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // Add the captured image to the PDF
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+
+                // Add signatures from global config
+                const config = globalConfig;
+                if (config.signature1Image) {
+                    const sig1X = (pageWidth * (config.signature1X || 20)) / 100;
+                    const sig1Y = (pageHeight * (config.signature1Y || 80)) / 100;
+                    const sig1Width = config.signature1Width || 100;
+                    const sig1Height = config.signature1Height || 50;
+                    doc.addImage(config.signature1Image, 'PNG', sig1X - sig1Width/2, sig1Y - sig1Height/2, sig1Width, sig1Height);
+                }
+                if (config.signature1Name) {
+                    doc.setFontSize(config.signature1NameFontSize || 14);
+                    const sig1NameX = (pageWidth * (config.signature1NameX || config.signature1X || 20)) / 100;
+                    const sig1NameY = (pageHeight * (config.signature1NameY || 85)) / 100;
+                    doc.text(config.signature1Name, sig1NameX, sig1NameY, { align: 'center' });
+                }
+
+                if (config.signature2Image) {
+                    const sig2X = (pageWidth * (config.signature2X || 80)) / 100;
+                    const sig2Y = (pageHeight * (config.signature2Y || 80)) / 100;
+                    const sig2Width = config.signature2Width || 100;
+                    const sig2Height = config.signature2Height || 50;
+                    doc.addImage(config.signature2Image, 'PNG', sig2X - sig2Width/2, sig2Y - sig2Height/2, sig2Width, sig2Height);
+                }
+                if (config.signature2Name) {
+                    doc.setFontSize(14);
+                    const sig2NameX = (pageWidth * (config.signature2X || 80)) / 100;
+                    const sig2NameY = (pageHeight * (config.signature2Y || 80)) / 100 + (config.signature2Height || 50)/2 + 10;
+                    doc.text(config.signature2Name, sig2NameX, sig2NameY, { align: 'center' });
+                }
+
+                // Use blob for more reliable download
+                const pdfBlob = doc.output('blob');
+                const url = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `certificado-${result.userName}-${result.title.replace(/ /g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error generating certificate PDF:', error);
+                alert('Error al generar el certificado. Por favor, inténtalo de nuevo.');
+            }
+        }
+
+        function initializeControls() {
+            // User name controls
+            const userFontSizeRange = document.getElementById('userFontSizeRange');
+            const userFontSizeValue = document.getElementById('userFontSizeValue');
+            const userPositionRange = document.getElementById('userPositionRange');
+            const userPositionValue = document.getElementById('userPositionValue');
+            const userPositionXRange = document.getElementById('userPositionXRange');
+            const userPositionXValue = document.getElementById('userPositionXValue');
+
+            const savedUserFontSize = globalConfig.userNameFontSize || 36;
+            const savedUserTop = globalConfig.userNameTop || 130; // Default top position
+            const savedUserLeft = globalConfig.userNameLeft || 0; // Default horizontal position (center)
+
+            userFontSizeRange.value = savedUserFontSize;
+            userFontSizeValue.textContent = savedUserFontSize;
+            userPositionRange.value = savedUserTop;
+            userPositionValue.textContent = savedUserTop;
+            userPositionXRange.value = savedUserLeft;
+            userPositionXValue.textContent = savedUserLeft;
+
+            const userFontFamily = document.getElementById('userFontFamily');
+            userFontFamily.addEventListener('input', function() {
+                const fontFamily = this.value;
+                globalConfig.userFontFamily = fontFamily;
+                applyStyles();
+            });
+
+            const savedUserFontFamily = globalConfig.userFontFamily || 'Times New Roman';
+            userFontFamily.value = savedUserFontFamily;
+            document.querySelector('.user-name').style.fontFamily = savedUserFontFamily;
+			
+			// Course name controls
+            const courseFontSizeRange = document.getElementById('courseFontSizeRange');
+            const courseFontSizeValue = document.getElementById('courseFontSizeValue');
+            const coursePositionRange = document.getElementById('coursePositionRange');
+            const coursePositionValue = document.getElementById('coursePositionValue');
+            const coursePositionXRange = document.getElementById('coursePositionXRange');
+            const coursePositionXValue = document.getElementById('coursePositionXValue');
+
+            const savedCourseFontSize = globalConfig.courseNameFontSize || 24;
+            const savedCourseTop = globalConfig.courseNameTop || 180; // Default top position
+            const savedCourseLeft = globalConfig.courseNameLeft || 0; // Default horizontal position (center)
+
+            courseFontSizeRange.value = savedCourseFontSize;
+            courseFontSizeValue.textContent = savedCourseFontSize;
+            coursePositionRange.value = savedCourseTop;
+            coursePositionValue.textContent = savedCourseTop;
+            coursePositionXRange.value = savedCourseLeft;
+            coursePositionXValue.textContent = savedCourseLeft;
+
+            // Date controls
+            const dateFontSizeRange = document.getElementById('dateFontSizeRange');
+            const dateFontSizeValue = document.getElementById('dateFontSizeValue');
+            const datePositionRange = document.getElementById('datePositionRange');
+            const datePositionValue = document.getElementById('datePositionValue');
+            const datePositionXRange = document.getElementById('datePositionXRange');
+            const datePositionXValue = document.getElementById('datePositionXValue');
+
+            const savedDateFontSize = globalConfig.dateFontSize || 18;
+            const savedDateTop = globalConfig.dateTop || 250; // Default top position
+            const savedDateLeft = globalConfig.dateLeft || 0; // Default horizontal position (center)
+
+            dateFontSizeRange.value = savedDateFontSize;
+            dateFontSizeValue.textContent = savedDateFontSize;
+            datePositionRange.value = savedDateTop;
+            datePositionValue.textContent = savedDateTop;
+            datePositionXRange.value = savedDateLeft;
+            datePositionXValue.textContent = savedDateLeft;
+
+            // Input fields
+            const userNameInput = document.getElementById('userNameInput');
+            const courseNameInput = document.getElementById('courseNameInput');
+
+            // --- Logic to populate inputs based on URL or fallback ---
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const loggedInUserName = user.name || '';
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const resultIndex = urlParams.get('resultIndex');
+            const examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+
+            let courseTitle = '';
+            let studentName = loggedInUserName; // Default to logged-in user
+
+            if (resultIndex !== null) {
+                const result = examResults[parseInt(resultIndex)];
+                if (result) {
+                    courseTitle = result.title;
+                    studentName = result.userName; // Use the name from the specific result
+                }
+            } else {
+                // Fallback: If no index, find latest exam for the logged-in user
+                const userResults = examResults
+                    .filter(r => r.userName === loggedInUserName)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                if (userResults.length > 0) {
+                    courseTitle = userResults[0].title;
+                }
+            }
+
+            // Set the input values based on the logic above
+            userNameInput.value = studentName;
+            courseNameInput.value = courseTitle;
+
+
+            // Event listeners
+            userFontSizeRange.addEventListener('input', function() {
+                const val = this.value;
+                userFontSizeValue.textContent = val;
+                globalConfig.userNameFontSize = parseInt(val);
+                applyStyles();
+            });
+
+            userPositionRange.addEventListener('input', function() {
+                const val = this.value;
+                userPositionValue.textContent = val;
+                globalConfig.userNameTop = parseInt(val);
+                applyStyles();
+            });
+
+            userPositionXRange.addEventListener('input', function() {
+                const val = this.value;
+                userPositionXValue.textContent = val;
+                globalConfig.userNameLeft = parseInt(val);
+                applyStyles();
+            });
+
+            courseFontSizeRange.addEventListener('input', function() {
+                const val = this.value;
+                courseFontSizeValue.textContent = val;
+                globalConfig.courseNameFontSize = parseInt(val);
+                applyStyles();
+            });
+
+            coursePositionRange.addEventListener('input', function() {
+                const val = this.value;
+                coursePositionValue.textContent = val;
+                globalConfig.courseNameTop = parseInt(val);
+                applyStyles();
+            });
+
+            coursePositionXRange.addEventListener('input', function() {
+                const val = this.value;
+                coursePositionXValue.textContent = val;
+                globalConfig.courseNameLeft = parseInt(val);
+                applyStyles();
+            });
+
+            dateFontSizeRange.addEventListener('input', function() {
+                const val = this.value;
+                dateFontSizeValue.textContent = val;
+                globalConfig.dateFontSize = parseInt(val);
+                applyStyles();
+            });
+
+            datePositionRange.addEventListener('input', function() {
+                const val = this.value;
+                datePositionValue.textContent = val;
+                globalConfig.dateTop = parseInt(val);
+                applyStyles();
+            });
+
+            datePositionXRange.addEventListener('input', function() {
+                const val = this.value;
+                datePositionXValue.textContent = val;
+                globalConfig.dateLeft = parseInt(val);
+                applyStyles();
+            });
+
+            userNameInput.addEventListener('input', function() {
+                const name = this.value;
+                document.querySelector('.user-name').textContent = name;
+                globalConfig.previewUserName = name;
+            });
+
+            courseNameInput.addEventListener('input', function() {
+                const name = this.value;
+                document.querySelector('.course-name').textContent = name;
+                globalConfig.previewCourseName = name;
+            });
+
+            // Signature controls
+            const signature1File = document.getElementById('signature1File');
+            const signature1Name = document.getElementById('signature1Name');
+            const signature1NameFontSizeRange = document.getElementById('signature1NameFontSizeRange');
+            const signature1NameFontSizeValue = document.getElementById('signature1NameFontSizeValue');
+            const signature1NameXRange = document.getElementById('signature1NameXRange');
+            const signature1NameXValue = document.getElementById('signature1NameXValue');
+            const signature1NameYRange = document.getElementById('signature1NameYRange');
+            const signature1NameYValue = document.getElementById('signature1NameYValue');
+            const signature1XRange = document.getElementById('signature1XRange');
+            const signature1XValue = document.getElementById('signature1XValue');
+            const signature1YRange = document.getElementById('signature1YRange');
+            const signature1YValue = document.getElementById('signature1YValue');
+            const signature1WidthRange = document.getElementById('signature1WidthRange');
+            const signature1WidthValue = document.getElementById('signature1WidthValue');
+            const signature1HeightRange = document.getElementById('signature1HeightRange');
+            const signature1HeightValue = document.getElementById('signature1HeightValue');
+
+            const signature2File = document.getElementById('signature2File');
+            const signature2Name = document.getElementById('signature2Name');
+            const signature2XRange = document.getElementById('signature2XRange');
+            const signature2XValue = document.getElementById('signature2XValue');
+            const signature2YRange = document.getElementById('signature2YRange');
+            const signature2YValue = document.getElementById('signature2YValue');
+            const signature2WidthRange = document.getElementById('signature2WidthRange');
+            const signature2WidthValue = document.getElementById('signature2WidthValue');
+            const signature2HeightRange = document.getElementById('signature2HeightRange');
+            const signature2HeightValue = document.getElementById('signature2HeightValue');
+
+            // Set initial values for signature 1
+            signature1XRange.value = globalConfig.signature1X || 20;
+            signature1XValue.textContent = globalConfig.signature1X || 20;
+            signature1YRange.value = globalConfig.signature1Y || 80;
+            signature1YValue.textContent = globalConfig.signature1Y || 80;
+            signature1WidthRange.value = globalConfig.signature1Width || 100;
+            signature1WidthValue.textContent = globalConfig.signature1Width || 100;
+            signature1HeightRange.value = globalConfig.signature1Height || 50;
+            signature1HeightValue.textContent = globalConfig.signature1Height || 50;
+            signature1Name.value = globalConfig.signature1Name || '';
+            signature1NameFontSizeRange.value = globalConfig.signature1NameFontSize || 14;
+            signature1NameFontSizeValue.textContent = globalConfig.signature1NameFontSize || 14;
+            signature1NameXRange.value = globalConfig.signature1NameX || globalConfig.signature1X || 20;
+            signature1NameXValue.textContent = globalConfig.signature1NameX || globalConfig.signature1X || 20;
+            signature1NameYRange.value = globalConfig.signature1NameY || 85;
+            signature1NameYValue.textContent = globalConfig.signature1NameY || 85;
+
+            // Set initial values for signature 2
+            signature2XRange.value = globalConfig.signature2X || 80;
+            signature2XValue.textContent = globalConfig.signature2X || 80;
+            signature2YRange.value = globalConfig.signature2Y || 80;
+            signature2YValue.textContent = globalConfig.signature2Y || 80;
+            signature2WidthRange.value = globalConfig.signature2Width || 100;
+            signature2WidthValue.textContent = globalConfig.signature2Width || 100;
+            signature2HeightRange.value = globalConfig.signature2Height || 50;
+            signature2HeightValue.textContent = globalConfig.signature2Height || 50;
+            signature2Name.value = globalConfig.signature2Name || '';
+            signature2NameFontSizeRange.value = globalConfig.signature2NameFontSize || 14;
+            signature2NameFontSizeValue.textContent = globalConfig.signature2NameFontSize || 14;
+            signature2NameXRange.value = globalConfig.signature2NameX || globalConfig.signature2X || 80;
+            signature2NameXValue.textContent = globalConfig.signature2NameX || globalConfig.signature2X || 80;
+            signature2NameYRange.value = globalConfig.signature2NameY || 85;
+            signature2NameYValue.textContent = globalConfig.signature2NameY || 85;
+
+            // Event listeners for signature 1
+            signature1File.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        globalConfig.signature1Image = e.target.result;
+                        applySignatureStyles();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            signature1Name.addEventListener('input', function() {
+                globalConfig.signature1Name = this.value;
+            });
+
+            signature1NameFontSizeRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1NameFontSizeValue.textContent = val;
+                globalConfig.signature1NameFontSize = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1NameXRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1NameXValue.textContent = val;
+                globalConfig.signature1NameX = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1NameYRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1NameYValue.textContent = val;
+                globalConfig.signature1NameY = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1XRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1XValue.textContent = val;
+                globalConfig.signature1X = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1YRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1YValue.textContent = val;
+                globalConfig.signature1Y = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1WidthRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1WidthValue.textContent = val;
+                globalConfig.signature1Width = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature1HeightRange.addEventListener('input', function() {
+                const val = this.value;
+                signature1HeightValue.textContent = val;
+                globalConfig.signature1Height = parseInt(val);
+                applySignatureStyles();
+            });
+
+            // Event listeners for signature 2
+            signature2File.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        globalConfig.signature2Image = e.target.result;
+                        applySignatureStyles();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            signature2Name.addEventListener('input', function() {
+                globalConfig.signature2Name = this.value;
+            });
+
+            signature2NameFontSizeRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2NameFontSizeValue.textContent = val;
+                globalConfig.signature2NameFontSize = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2NameXRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2NameXValue.textContent = val;
+                globalConfig.signature2NameX = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2NameYRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2NameYValue.textContent = val;
+                globalConfig.signature2NameY = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2XRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2XValue.textContent = val;
+                globalConfig.signature2X = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2YRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2YValue.textContent = val;
+                globalConfig.signature2Y = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2WidthRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2WidthValue.textContent = val;
+                globalConfig.signature2Width = parseInt(val);
+                applySignatureStyles();
+            });
+
+            signature2HeightRange.addEventListener('input', function() {
+                const val = this.value;
+                signature2HeightValue.textContent = val;
+                globalConfig.signature2Height = parseInt(val);
+                applySignatureStyles();
+            });
+
+            // Certificate template selection
+            const certificateTemplate = document.getElementById('certificateTemplate');
+            const certificatePreview = document.getElementById('certificatePreview');
+
+            // Set initial preview
+            certificatePreview.src = `Certificados/${globalConfig.certificateTemplate || 'Cert_1.png'}`;
+
+            certificateTemplate.addEventListener('change', function() {
+                globalConfig.certificateTemplate = this.value;
+                applyCertificateTemplate();
+                certificatePreview.src = `Certificados/${this.value}`;
+            });
+
+            document.getElementById('save-config-button').addEventListener('click', async function () {
+                await saveGlobalConfig();
+            });
+
+            document.getElementById('download-button').addEventListener('click', function() {
+                window.print();
+            });
+
+            document.getElementById('download-button-below').addEventListener('click', function() {
+                window.print();
+            });
+
+            // Apply initial signature styles
+            applySignatureStyles();
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+</html>

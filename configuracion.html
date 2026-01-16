@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Configuración de Posiciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        select, input[type=number] {
+            margin-top: 5px;
+            width: 200px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuración de Posición y Tamaño</h1>
+    <form id="config-form">
+        <fieldset>
+            <legend>Nombre del Examen</legend>
+            <label for="exam-position">Posición</label>
+            <select id="exam-position">
+                <option value="top-center">Arriba Centrado</option>
+                <option value="top-left">Arriba Izquierda</option>
+                <option value="top-right">Arriba Derecha</option>
+                <option value="below-image">Debajo de la Imagen</option>
+            </select>
+            <label for="exam-size">Tamaño (px)</label>
+            <input type="number" id="exam-size" min="10" max="72" value="24" />
+        </fieldset>
+        <fieldset>
+            <legend>Nombre del Usuario</legend>
+            <label for="user-position">Posición</label>
+            <select id="user-position">
+                <option value="below-title">Debajo del Título</option>
+                <option value="above-title">Encima del Título</option>
+                <option value="right-of-title">Derecha del Título</option>
+                <option value="left-of-title">Izquierda del Título</option>
+            </select>
+            <label for="user-size">Tamaño (px)</label>
+            <input type="number" id="user-size" min="10" max="72" value="16" />
+        </fieldset>
+        <button type="button" id="save-btn">Guardar Cambios</button>
+    </form>
+
+    <script>
+        document.getElementById('save-btn').addEventListener('click', () => {
+            const examPosition = document.getElementById('exam-position').value;
+            const examSize = document.getElementById('exam-size').value;
+            const userPosition = document.getElementById('user-position').value;
+            const userSize = document.getElementById('user-size').value;
+
+            const config = { examPosition, examSize, userPosition, userSize };
+            localStorage.setItem('layoutConfig', JSON.stringify(config));
+            alert('Configuración guardada.');
+        });
+    </script>
+</body>
+</html>

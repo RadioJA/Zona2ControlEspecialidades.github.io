@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Especialidades - Gestión de Exámenes</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <a href="admin_panel.html" class="btn btn-secondary mb-3">Volver al Panel de Administración</a>
+        <h1 class="text-center mb-4">Especialidades - Gestión de Exámenes</h1>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="gestion-tab" data-bs-toggle="tab" data-bs-target="#gestion" type="button" role="tab" aria-controls="gestion" aria-selected="true">Gestionar Exámenes</button>
+            </li>
+            <!--<li class="nav-item" role="presentation">
+                <button class="nav-link" id="tomar-tab" data-bs-toggle="tab" data-bs-target="#tomar" type="button" role="tab" aria-controls="tomar" aria-selected="false">Tomar Examen</button>
+            </li>-->
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Gestionar Exámenes Tab -->
+            <div class="tab-pane fade show active" id="gestion" role="tabpanel" aria-labelledby="gestion-tab">
+                <div class="mt-4">
+                    <button class="btn btn-primary mb-3" onclick="showCreateExamForm()">Crear Nuevo Examen</button>
+                    <div id="examForm" class="d-none">
+                        <h3 id="formTitle">Crear Examen de Selección Múltiple</h3>
+                        <form id="createExamForm">
+                            <div class="mb-3">
+                                <label for="examTitle" class="form-label">Título del Examen</label>
+                                <input type="text" class="form-control" id="examTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="examImage" class="form-label">Imagen del Examen (opcional)</label>
+                                <input type="file" class="form-control" id="examImage" accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <label for="maxAttempts" class="form-label">Número Máximo de Intentos</label>
+                                <input type="number" class="form-control" id="maxAttempts" min="1" value="1" required>
+                            </div>
+                            <div id="questionsContainer">
+                                <div class="question mb-3 border p-3">
+                                    <label class="form-label">Pregunta 1</label>
+                                    <input type="text" class="form-control mb-2" placeholder="Escribe la pregunta" required>
+                                    <div class="options">
+                                        <input type="text" class="form-control mb-1" placeholder="Opción 1" required>
+                                        <input type="text" class="form-control mb-1" placeholder="Opción 2" required>
+                                        <input type="text" class="form-control mb-1" placeholder="Opción 3" required>
+                                        <input type="text" class="form-control mb-1" placeholder="Opción 4" required>
+                                    </div>
+                                    <select class="form-select mb-2" required>
+                                        <option value="">Selecciona la respuesta correcta</option>
+                                        <option value="0">Opción 1</option>
+                                        <option value="1">Opción 2</option>
+                                        <option value="2">Opción 3</option>
+                                        <option value="3">Opción 4</option>
+                                    </select>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">Eliminar Pregunta</button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mb-3" onclick="addQuestion()">Agregar Pregunta</button>
+                            <button type="submit" class="btn btn-success">Guardar Examen</button>
+                        </form>
+                    </div>
+                    <h3>Exámenes Guardados</h3>
+                    <div id="savedExams" class="row"></div>
+                </div>
+            </div>
+
+            <!-- Tomar Examen Tab -->
+            <div class="tab-pane fade" id="tomar" role="tabpanel" aria-labelledby="tomar-tab">
+                <div class="mt-4">
+                    <h3>Exámenes Activos</h3>
+                    <div id="activeExamsList" class="row"></div>
+                    <div id="examTaking" class="d-none">
+                        <h4 id="examTitleDisplay"></h4>
+                        <form id="takeExamForm">
+                            <div id="examQuestions"></div>
+                            <button type="submit" class="btn btn-primary">Enviar Examen</button>
+                        </form>
+                        <div id="examResult" class="d-none mt-3">
+                            <h5>Resultado</h5>
+                            <p id="scoreDisplay"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let exams = JSON.parse(localStorage.getItem('exams')) || [];
+        let examResults = JSON.parse(localStorage.getItem('examResults')) || [];
+        let editingExamId = null;
+        let userName = localStorage.getItem('userName') || 'Usuario Anónimo';
+
+        function showCreateExamForm() {
+            document.getElementById('examForm').classList.remove('d-none');
+        }
+
+        function addQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const questionCount = container.children.length + 1;
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question mb-3 border p-3';
+            questionDiv.innerHTML = `
+                <label class="form-label">Pregunta ${questionCount}</label>
+                <input type="text" class="form-control mb-2" placeholder="Escribe la pregunta" required>
+                <div class="options">
+                    <input type="text" class="form-control mb-1" placeholder="Opción 1" required>
+                    <input type="text" class="form-control mb-1" placeholder="Opción 2" required>
+                    <input type="text" class="form-control mb-1" placeholder="Opción 3" required>
+                    <input type="text" class="form-control mb-1" placeholder="Opción 4" required>
+                </div>
+                <select class="form-select mb-2" required>
+                    <option value="">Selecciona la respuesta correcta</option>
+                    <option value="0">Opción 1</option>
+                    <option value="1">Opción 2</option>
+                    <option value="2">Opción 3</option>
+                    <option value="3">Opción 4</option>
+                </select>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">Eliminar Pregunta</button>
+            `;
+            container.appendChild(questionDiv);
+        }
+
+        function removeQuestion(button) {
+            button.parentElement.remove();
+        }
+
+        document.getElementById('createExamForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const title = document.getElementById('examTitle').value;
+            const imageInput = document.getElementById('examImage');
+            let image = null;
+            if (imageInput.files.length > 0) {
+                const file = imageInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    image = event.target.result;
+                    saveExam(title, image);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                saveExam(title, image);
+            }
+        });
+
+        function saveExam(title, image) {
+            const maxAttempts = parseInt(document.getElementById('maxAttempts').value) || 1;
+            const questions = [];
+            const questionElements = document.querySelectorAll('.question');
+            questionElements.forEach(q => {
+                const questionText = q.querySelector('input[type="text"]').value;
+                const options = Array.from(q.querySelectorAll('.options input')).map(inp => inp.value);
+                const correct = q.querySelector('select').value;
+                questions.push({ question: questionText, options, correct: parseInt(correct) });
+            });
+            if (editingExamId) {
+                const examIndex = exams.findIndex(e => e.id === editingExamId);
+                exams[examIndex] = { ...exams[examIndex], title, questions, image, max_attempts: maxAttempts };
+            } else {
+                const exam = { id: Date.now(), title, questions, active: false, image, max_attempts: maxAttempts };
+                exams.push(exam);
+            }
+            localStorage.setItem('exams', JSON.stringify(exams));
+            displaySavedExams();
+            document.getElementById('examForm').classList.add('d-none');
+            document.getElementById('createExamForm').reset();
+            document.getElementById('questionsContainer').innerHTML = document.querySelector('.question').outerHTML;
+            document.getElementById('formTitle').textContent = 'Crear Examen de Selección Múltiple';
+            editingExamId = null;
+        }
+
+        function displaySavedExams() {
+            const container = document.getElementById('savedExams');
+            container.innerHTML = '';
+            exams.forEach(exam => {
+                const col = document.createElement('div');
+                col.className = 'col-auto';
+                col.innerHTML = `
+                    <div class="card">
+                        ${exam.image ? `<img src="${exam.image}" class="card-img-top" alt="Imagen del examen" style="max-height: 50px; width: 100%; object-fit: contain;">` : ''}
+                        <div class="card-body p-2">
+                            <h5 class="card-title">${exam.title}</h5>
+                            <p class="card-text">Preguntas: ${exam.questions.length}</p>
+                            <p class="card-text">Intentos máximos: ${exam.max_attempts || 1}</p>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="active-${exam.id}" ${exam.active ? 'checked' : ''} onchange="toggleActive(${exam.id})">
+                                <label class="form-check-label" for="active-${exam.id}">Activo</label>
+                            </div>
+                            <button class="btn btn-warning btn-sm mt-2 me-1" onclick="editExam(${exam.id})">Editar</button>
+                            <button class="btn btn-danger btn-sm mt-2" onclick="deleteExam(${exam.id})">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+            displayActiveExams();
+        }
+
+        function toggleActive(id) {
+            const exam = exams.find(e => e.id === id);
+            exam.active = !exam.active;
+            localStorage.setItem('exams', JSON.stringify(exams));
+            displaySavedExams();
+        }
+
+        function editExam(id) {
+            const exam = exams.find(e => e.id === id);
+            editingExamId = id;
+            document.getElementById('formTitle').textContent = 'Editar Examen';
+            document.getElementById('examTitle').value = exam.title;
+            document.getElementById('maxAttempts').value = exam.max_attempts || 1;
+            // For image, we can't set the file input value directly, so we'll leave it as is
+            // Clear existing questions
+            document.getElementById('questionsContainer').innerHTML = '';
+            exam.questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question mb-3 border p-3';
+                questionDiv.innerHTML = `
+                    <label class="form-label">Pregunta ${index + 1}</label>
+                    <input type="text" class="form-control mb-2" placeholder="Escribe la pregunta" value="${q.question}" required>
+                    <div class="options">
+                        <input type="text" class="form-control mb-1" placeholder="Opción 1" value="${q.options[0]}" required>
+                        <input type="text" class="form-control mb-1" placeholder="Opción 2" value="${q.options[1]}" required>
+                        <input type="text" class="form-control mb-1" placeholder="Opción 3" value="${q.options[2]}" required>
+                        <input type="text" class="form-control mb-1" placeholder="Opción 4" value="${q.options[3]}" required>
+                    </div>
+                    <select class="form-select mb-2" required>
+                        <option value="">Selecciona la respuesta correcta</option>
+                        <option value="0" ${q.correct === 0 ? 'selected' : ''}>Opción 1</option>
+                        <option value="1" ${q.correct === 1 ? 'selected' : ''}>Opción 2</option>
+                        <option value="2" ${q.correct === 2 ? 'selected' : ''}>Opción 3</option>
+                        <option value="3" ${q.correct === 3 ? 'selected' : ''}>Opción 4</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">Eliminar Pregunta</button>
+                `;
+                document.getElementById('questionsContainer').appendChild(questionDiv);
+            });
+            document.getElementById('examForm').classList.remove('d-none');
+        }
+
+        function deleteExam(id) {
+            exams = exams.filter(e => e.id !== id);
+            localStorage.setItem('exams', JSON.stringify(exams));
+            displaySavedExams();
+        }
+
+        function displayActiveExams() {
+            const container = document.getElementById('activeExamsList');
+            container.innerHTML = '';
+            const activeExams = exams.filter(e => e.active).filter(exam => {
+                const attempts = examResults.filter(r => r.userName === userName && r.title === exam.title).length;
+                return attempts < (exam.max_attempts || 1);
+            });
+            activeExams.forEach(exam => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                col.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${exam.title}</h5>
+                            <p class="card-text">Preguntas: ${exam.questions.length}</p>
+                            <button class="btn btn-primary" onclick="takeExam(${exam.id})">Tomar Examen</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        function takeExam(id) {
+            const exam = exams.find(e => e.id === id);
+            document.getElementById('examTitleDisplay').textContent = exam.title;
+            const questionsDiv = document.getElementById('examQuestions');
+            questionsDiv.innerHTML = '';
+            if (exam.image) {
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'mb-3';
+                imgDiv.innerHTML = `<img src="${exam.image}" alt="Imagen del examen" style="max-width: 400px; width: 100%; height: auto;">`;
+                questionsDiv.appendChild(imgDiv);
+            }
+            exam.questions.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'mb-3';
+                qDiv.innerHTML = `
+                    <p><strong>${q.question}</strong></p>
+                    ${q.options.map((opt, i) => `<div class="form-check">
+                        <input class="form-check-input" type="radio" name="q${index}" value="${i}" required>
+                        <label class="form-check-label">${opt}</label>
+                    </div>`).join('')}
+                `;
+                questionsDiv.appendChild(qDiv);
+            });
+            document.getElementById('examTaking').classList.remove('d-none');
+            document.getElementById('activeExamsList').classList.add('d-none');
+        }
+
+        document.getElementById('takeExamForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const answers = {};
+            for (let [key, value] of formData.entries()) {
+                answers[key] = parseInt(value);
+            }
+            const exam = exams.find(e => e.title === document.getElementById('examTitleDisplay').textContent);
+            let correct = 0;
+            exam.questions.forEach((q, index) => {
+                if (answers[`q${index}`] === q.correct) correct++;
+            });
+            const score = `${correct}/${exam.questions.length}`;
+            document.getElementById('scoreDisplay').textContent = `Puntuación: ${score}`;
+            document.getElementById('examResult').classList.remove('d-none');
+            this.classList.add('d-none');
+
+            examResults.push({
+                userName,
+                title: exam.title,
+                score: correct,
+                totalQuestions: exam.questions.length,
+                date: new Date().toISOString(),
+                answers: JSON.stringify(answers)
+            });
+            localStorage.setItem('examResults', JSON.stringify(examResults));
+        });
+
+        // Load exams on page load
+        displaySavedExams();
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend Config</title>
+</head>
+<body>
+    <h1>Testing Global Certificate Configuration</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testFrontend() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing frontend integration...</p>';
+
+            try {
+                // Test loading global config
+                const response = await fetch('/api/certificate-configs/global');
+                if (response.ok) {
+                    const data = await response.json();
+                    const config = JSON.parse(data.config_value);
+                    results.innerHTML += `<p>✅ Global config loaded: ${JSON.stringify(config)}</p>`;
+                } else {
+                    results.innerHTML += '<p>❌ No global config found</p>';
+                }
+
+                // Test saving global config
+                const testConfig = {
+                    userNameFontSize: 42,
+                    userNameTop: 150,
+                    signature1Name: "Updated Test Admin"
+                };
+
+                const saveResponse = await fetch('/api/certificate-configs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        config_key: 'global',
+                        config_value: JSON.stringify(testConfig)
+                    })
+                });
+
+                if (saveResponse.ok) {
+                    results.innerHTML += '<p>✅ Config saved successfully</p>';
+
+                    // Test loading again
+                    const reloadResponse = await fetch('/api/certificate-configs/global');
+                    if (reloadResponse.ok) {
+                        const reloadData = await reloadResponse.json();
+                        const reloadConfig = JSON.parse(reloadData.config_value);
+                        results.innerHTML += `<p>✅ Config reloaded: ${JSON.stringify(reloadConfig)}</p>`;
+                    }
+                } else {
+                    results.innerHTML += '<p>❌ Failed to save config</p>';
+                }
+
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testFrontend);
+    </script>
+</body>
+</html>
