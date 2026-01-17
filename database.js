@@ -1,85 +1,21 @@
-const sqlite3 = require('sqlite3').verbose();
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
-// Create database connection
-const db = new sqlite3.Database('./database.db', (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to SQLite database.');
-    }
-});
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyANWiW1T5QgDrEobpoiAkieXiC7y1x4mwo",
+  authDomain: "zona2especialidades.firebaseapp.com",
+  projectId: "zona2especialidades",
+  storageBucket: "zona2especialidades.firebasestorage.app",
+  messagingSenderId: "722326439939",
+  appId: "1:722326439939:web:5f1b8711a76496a67c6636"
+};
 
-// Initialize database tables
-function initializeDatabase() {
-    // Create users table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            rol TEXT DEFAULT 'user',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating users table:', err.message);
-        }
-    });
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-    // Create exams table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS exams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            questions TEXT NOT NULL,
-            max_attempts INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating exams table:', err.message);
-        } else {
-            // Add max_attempts column if it doesn't exist (for existing databases)
-            db.run(`ALTER TABLE exams ADD COLUMN max_attempts INTEGER DEFAULT 1`, (alterErr) => {
-                if (alterErr && !alterErr.message.includes('duplicate column name')) {
-                    console.error('Error adding max_attempts column:', alterErr.message);
-                }
-            });
-        }
-    });
-
-    // Create exam_results table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS exam_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userName TEXT NOT NULL,
-            title TEXT NOT NULL,
-            score INTEGER NOT NULL,
-            totalQuestions INTEGER NOT NULL,
-            date TEXT DEFAULT CURRENT_TIMESTAMP,
-            answers TEXT
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating exam_results table:', err.message);
-        }
-    });
-
-    // Create certificate_configs table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS certificate_configs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            config_key TEXT UNIQUE NOT NULL,
-            config_value TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating certificate_configs table:', err.message);
-        }
-    });
-}
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(app);
 
 module.exports = db;
-module.exports.initializeDatabase = initializeDatabase;

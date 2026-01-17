@@ -1,122 +1,128 @@
-const express = require('express');
+import express from 'express';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import db from '../database.js';
+
 const router = express.Router();
-const db = require('../database');
 
 // GET /api/exams - Obtener todos los exámenes
-router.get('/', (req, res) => {
-    db.all('SELECT * FROM exams ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        // Parse questions JSON
-        rows.forEach(row => {
-            if (row.questions) {
-                row.questions = JSON.parse(row.questions);
-            }
+router.get('/', async (req, res) => {
+    try {
+        const examsRef = collection(db, 'exams');
+        const q = query(examsRef, orderBy('created_at', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const exams = [];
+        querySnapshot.forEach((doc) => {
+            exams.push({ id: doc.id, ...doc.data() });
         });
-        res.json(rows);
-    });
+        res.json(exams);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // GET /api/exams/active - Obtener exámenes activos
-router.get('/active', (req, res) => {
-    db.all('SELECT * FROM exams WHERE active = 1 ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        rows.forEach(row => {
-            if (row.questions) {
-                row.questions = JSON.parse(row.questions);
-            }
+router.get('/active', async (req, res) => {
+    try {
+        const examsRef = collection(db, 'exams');
+        const q = query(examsRef, where('active', '==', true), orderBy('created_at', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const exams = [];
+        querySnapshot.forEach((doc) => {
+            exams.push({ id: doc.id, ...doc.data() });
         });
-        res.json(rows);
-    });
+        res.json(exams);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // GET /api/exams/:id - Obtener examen por ID
-router.get('/:id', (req, res) => {
-    const { id } = req.params;
-    db.get('SELECT * FROM exams WHERE id = ?', [id], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (!row) {
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const examDoc = await getDoc(doc(db, 'exams', id));
+        if (!examDoc.exists()) {
             return res.status(404).json({ error: 'Examen no encontrado' });
         }
-        if (row.questions) {
-            row.questions = JSON.parse(row.questions);
-        }
-        res.json(row);
-    });
+        res.json({ id: examDoc.id, ...examDoc.data() });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // POST /api/exams - Crear nuevo examen
-router.post('/', (req, res) => {
-    const { title, questions, image, max_attempts } = req.body;
+router.post('/', async (req, res) => {
+    try {
+        const { title, questions, image, max_attempts } = req.body;
 
-    if (!title || !questions || !Array.isArray(questions)) {
-        return res.status(400).json({ error: 'Título y preguntas son requeridos' });
-    }
+        if (!title || !questions || !Array.isArray(questions)) {
+            return res.status(400).json({ error: 'Título y preguntas son requeridos' });
+        }
 
-    const questionsJson = JSON.stringify(questions);
-    const created_at = new Date().toISOString();
-    const maxAttempts = max_attempts || 1;
+        const created_at = new Date().toISOString();
+        const maxAttempts = max_attempts || 1;
 
-    db.run('INSERT INTO exams (title, questions, image, active, max_attempts, created_at) VALUES (?, ?, ?, 0, ?, ?)',
-        [title, questionsJson, image || '', maxAttempts, created_at],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            res.status(201).json({
-                id: this.lastID,
-                title,
-                questions,
-                image: image || '',
-                active: false,
-                max_attempts: maxAttempts,
-                created_at
-            });
+        const docRef = await addDoc(collection(db, 'exams'), {
+            title,
+            questions,
+            image: image || '',
+            active: false,
+            max_attempts: maxAttempts,
+            created_at
         });
+
+        res.status(201).json({
+            id: docRef.id,
+            title,
+            questions,
+            image: image || '',
+            active: false,
+            max_attempts: maxAttempts,
+            created_at
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // PUT /api/exams/:id/toggle - Activar/desactivar examen
-router.put('/:id/toggle', (req, res) => {
-    const { id } = req.params;
+router.put('/:id/toggle', async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    // First get current status
-    db.get('SELECT active FROM exams WHERE id = ?', [id], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (!row) {
+        const examDoc = await getDoc(doc(db, 'exams', id));
+        if (!examDoc.exists()) {
             return res.status(404).json({ error: 'Examen no encontrado' });
         }
 
-        const newActive = row.active ? 0 : 1;
+        const currentActive = examDoc.data().active;
+        const newActive = !currentActive;
 
-        db.run('UPDATE exams SET active = ? WHERE id = ?', [newActive, id], function(err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ id: parseInt(id), active: !!newActive });
+        await updateDoc(doc(db, 'exams', id), {
+            active: newActive
         });
-    });
+
+        res.json({ id, active: newActive });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // DELETE /api/exams/:id - Eliminar examen
-router.delete('/:id', (req, res) => {
-    const { id } = req.params;
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    db.run('DELETE FROM exams WHERE id = ?', [id], function(err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (this.changes === 0) {
+        const examDoc = await getDoc(doc(db, 'exams', id));
+        if (!examDoc.exists()) {
             return res.status(404).json({ error: 'Examen no encontrado' });
         }
+
+        await deleteDoc(doc(db, 'exams', id));
         res.json({ message: 'Examen eliminado exitosamente' });
-    });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-module.exports = router;
+export default router;

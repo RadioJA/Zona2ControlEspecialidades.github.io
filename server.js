@@ -1,15 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const multer = require('multer');
-const db = require('./database');
-const { initializeDatabase } = require('./database');
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import multer from 'multer';
+import db from './database.js';
 
 // Routes
-const examRoutes = require('./routes/exams');
-const examResultRoutes = require('./routes/examResults');
-const userRoutes = require('./routes/users');
-const certificateConfigRoutes = require('./routes/certificateConfigs');
+import examRoutes from './routes/exams.js';
+import examResultRoutes from './routes/examResults.js';
+import userRoutes from './routes/users.js';
+import certificateConfigRoutes from './routes/certificateConfigs.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,8 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 // Configure multer for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Initialize database
-initializeDatabase();
+// Firebase initialized in database.js
 
 // Routes
 app.use('/api/exams', examRoutes);

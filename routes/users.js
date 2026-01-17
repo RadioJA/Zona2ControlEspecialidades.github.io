@@ -1,132 +1,153 @@
-const express = require('express');
+import express from 'express';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import db from '../database.js';
+
 const router = express.Router();
-const db = require('../database');
 
 // GET /api/users - Obtener todos los usuarios
-router.get('/', (req, res) => {
-    db.all('SELECT id, nombre, email, rol, created_at FROM users ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
-    });
+router.get('/', async (req, res) => {
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, orderBy('created_at', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const users = [];
+        querySnapshot.forEach((doc) => {
+            users.push({ id: doc.id, ...doc.data() });
+        });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // GET /api/users/:id - Obtener usuario por ID
-router.get('/:id', (req, res) => {
-    const { id } = req.params;
-    db.get('SELECT id, nombre, email, rol, created_at FROM users WHERE id = ?', [id], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (!row) {
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userDoc = await getDoc(doc(db, 'users', id));
+        if (!userDoc.exists()) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
-        res.json(row);
-    });
+        res.json({ id: userDoc.id, ...userDoc.data() });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // POST /api/users - Crear nuevo usuario
-router.post('/', (req, res) => {
-    const { nombre, email, rol } = req.body;
+router.post('/', async (req, res) => {
+    try {
+        const { nombre, email, rol } = req.body;
 
-    if (!nombre || !email) {
-        return res.status(400).json({ error: 'Nombre y email son requeridos' });
-    }
-
-    // Check if user already exists
-    db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+        if (!nombre || !email) {
+            return res.status(400).json({ error: 'Nombre y email son requeridos' });
         }
-        if (row) {
+
+        // Check if user already exists
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
             return res.status(409).json({ error: 'Usuario ya existe con este email' });
         }
 
         const created_at = new Date().toISOString();
         const userRol = rol || 'user';
 
-        db.run('INSERT INTO users (nombre, email, rol, created_at) VALUES (?, ?, ?, ?)',
-            [nombre, email, userRol, created_at],
-            function(err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                res.status(201).json({
-                    id: this.lastID,
-                    nombre,
-                    email,
-                    rol: userRol,
-                    created_at
-                });
-            });
-    });
+        const docRef = await addDoc(collection(db, 'users'), {
+            nombre,
+            email,
+            rol: userRol,
+            created_at
+        });
+
+        res.status(201).json({
+            id: docRef.id,
+            nombre,
+            email,
+            rol: userRol,
+            created_at
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // PUT /api/users/:id - Actualizar usuario
-router.put('/:id', (req, res) => {
-    const { id } = req.params;
-    const { nombre, email, rol } = req.body;
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, email, rol } = req.body;
 
-    if (!nombre || !email) {
-        return res.status(400).json({ error: 'Nombre y email son requeridos' });
-    }
+        if (!nombre || !email) {
+            return res.status(400).json({ error: 'Nombre y email son requeridos' });
+        }
 
-    db.run('UPDATE users SET nombre = ?, email = ?, rol = ? WHERE id = ?',
-        [nombre, email, rol || 'user', id],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            if (this.changes === 0) {
-                return res.status(404).json({ error: 'Usuario no encontrado' });
-            }
-            res.json({
-                id: parseInt(id),
-                nombre,
-                email,
-                rol: rol || 'user'
-            });
+        const userDoc = await getDoc(doc(db, 'users', id));
+        if (!userDoc.exists()) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        await updateDoc(doc(db, 'users', id), {
+            nombre,
+            email,
+            rol: rol || 'user'
         });
+
+        res.json({
+            id,
+            nombre,
+            email,
+            rol: rol || 'user'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // DELETE /api/users/:id - Eliminar usuario
-router.delete('/:id', (req, res) => {
-    const { id } = req.params;
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (this.changes === 0) {
+        const userDoc = await getDoc(doc(db, 'users', id));
+        if (!userDoc.exists()) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
+
+        await deleteDoc(doc(db, 'users', id));
         res.json({ message: 'Usuario eliminado exitosamente' });
-    });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // POST /api/users/login - Simular login (solo para compatibilidad con frontend)
-router.post('/login', (req, res) => {
-    const { email } = req.body;
+router.post('/login', async (req, res) => {
+    try {
+        const { email } = req.body;
 
-    if (!email) {
-        return res.status(400).json({ error: 'Email es requerido' });
-    }
-
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+        if (!email) {
+            return res.status(400).json({ error: 'Email es requerido' });
         }
-        if (!row) {
+
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
+
+        const userDoc = querySnapshot.docs[0];
         res.json({
-            id: row.id,
-            nombre: row.nombre,
-            email: row.email,
-            rol: row.rol
+            id: userDoc.id,
+            nombre: userDoc.data().nombre,
+            email: userDoc.data().email,
+            rol: userDoc.data().rol
         });
-    });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-module.exports = router;
+export default router;
